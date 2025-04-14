@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+    android:id="@+id/bottom_navigation"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/note_dash"
+        android:title="Note"
+        android:icon="@android:drawable/ic_menu_view" />
+    <item
+        android:id="@+id/quiz_dash"
+        android:title="Quiz"
+        android:icon="@android:drawable/ic_menu_manage" />
+    <item
+        android:id="@+id/flashcard_dash"
+        android:title="Flashcard"
+        android:icon="@android:drawable/ic_menu_info_details" />
+</menu>
