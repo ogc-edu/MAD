@@ -5,6 +5,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import androidx.fragment.app.Fragment;
 
@@ -39,7 +42,20 @@ public class NotesFragment extends Fragment {
         AI.modelCall(prompt, new AI.ResponseCallback() {
             @Override
             public void onResponse(String result) {
-                tv1.setText(result);
+                try {
+                    JSONArray jsonArray = new JSONArray(result); // parse response in string format into JSON Array, then parse into individual JSON object
+
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        JSONObject obj = jsonArray.getJSONObject(i);
+                        String question = obj.getString("question");        //extract question, depends on diff fields, then format quiz
+                    }
+
+                    tv1.setText(result);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    tv1.setText("Invalid JSON response");
+                }
             }
 
             @Override

@@ -11,6 +11,9 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 public class AI{
     private static final String API_KEY = "AIzaSyD3EW6Y58ai3PLtU9GUDlQJCps4n-Yrgp0";
     private static final String MODEL_ID = "gemini-1.5-flash";
@@ -42,6 +45,5 @@ public class AI{
             }
         }, MoreExecutors.directExecutor());
     }
-
 
 }
