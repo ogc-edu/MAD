@@ -10,12 +10,12 @@
         android:orientation="vertical">
 
         <TextView
-            android:id="@+id/id1"
+            android:id="@+id/folder_title_header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="?attr/colorPrimary"
             android:padding="16dp"
-            android:text="Notes"
+            android:text="Folder Name"
             android:textColor="@android:color/white"
             android:textSize="20sp"
             android:textStyle="bold" />
@@ -25,18 +25,18 @@
             android:layout_height="match_parent">
 
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/folders_recycler_view"
+                android:id="@+id/notes_recycler_view"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:clipToPadding="false"
                 android:padding="8dp" />
 
             <TextView
-                android:id="@+id/empty_view"
+                android:id="@+id/empty_notes_view"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:gravity="center"
-                android:text="No folders found. Create a new folder to get started."
+                android:text="No notes in this folder. Create a new note to get started."
                 android:textSize="16sp"
                 android:visibility="gone" />
         </FrameLayout>
@@ -44,12 +44,12 @@
     </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_add_folder"
+        android:id="@+id/fab_add_note"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
-        android:contentDescription="Add new folder"
+        android:contentDescription="Add new note"
         android:src="@android:drawable/ic_input_add"
         app:tint="@android:color/white" />
 

@@ -11,8 +11,8 @@ public class DatabaseClient {
         appDatabase = Room.databaseBuilder(
                 context.getApplicationContext(),
                 AppDatabase.class,
-                "study_partner"
-        ).build();
+                "quizfragments_db_v4"
+        ).fallbackToDestructiveMigration().build();
     }
 
     public static synchronized DatabaseClient getInstance(Context context) {
