@@ -9,7 +9,7 @@ import androidx.room.Update;
 import com.example.quizfragments.data.db.entities.Option;
 
 import java.util.List;
-
+@Dao
 public interface OptionDao {
     @Insert
     void insert(Option option);

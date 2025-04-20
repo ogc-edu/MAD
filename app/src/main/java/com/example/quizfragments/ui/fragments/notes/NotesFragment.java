@@ -59,6 +59,8 @@ public class NotesFragment extends Fragment {
                     e.printStackTrace();
                     tv1.setText("Invalid JSON response");
                 }
+                String clean = result.replaceAll("(?s)```(\\w+)?\\n", "").replaceAll("```", "");
+                tv1.setText(clean);
             }
 
             @Override
