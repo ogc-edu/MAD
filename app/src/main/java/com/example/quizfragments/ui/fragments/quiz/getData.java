@@ -46,7 +46,7 @@ public class getData extends Fragment {
                     .commit(); // Commit the transaction
         });
         call_ai.setOnClickListener(v -> {
-            String prompt = "Generate 10 multiple-choice quiz questions about Biology 1.\n" +
+            String prompt = "Generate 11 multiple-choice quiz questions about Biology 1.\n" +
                     "Each question must be in JSON format with the following structure:\n" +
                     "The first JSON object in JSON array gives the title and description for quiz, and must be in the format" +
                     "\n" +
@@ -68,12 +68,12 @@ public class getData extends Fragment {
             AI.modelCall(prompt, new AI.ResponseCallback() {
                 @Override
                 public void onResponse(String result) {
-                    result = result.replaceAll("(?s)```(\\w+)?\\n", "").replaceAll("```", "");
+                    result = result.replaceAll("(?s)```(\\w+)?\\n", "").replaceAll("```", "");      //remove ``` from response
                     try {
-                        JSONArray jsonArray = new JSONArray(result);
-                        JSONObject quizObject = jsonArray.getJSONObject(0);
+                        JSONArray jsonArray = new JSONArray(result);        //turn string response into array of JSON
+                        JSONObject quizObject = jsonArray.getJSONObject(0); //first object in array is title & description
 
-                        // Create the quiz object
+                        //create component objects then store in db using dao
                         Quiz quiz = new Quiz();
                         quiz.title = quizObject.getString("title");
                         quiz.description = quizObject.getString("description");
@@ -81,41 +81,31 @@ public class getData extends Fragment {
                         // Use a single thread for the entire database operation
                         new Thread(() -> {
                             try {
-                                // 1. Insert the quiz first and get its ID
-                                long quizId = db.quizDao().insert(quiz);
+                                long quizId = db.quizDao().insert(quiz);    //get id after inserting for fk constraints
 
-                                // Process each question
-                                for (int i = 1; i < jsonArray.length(); i++) {
+                                for (int i = 1; i < jsonArray.length(); i++) {      //start from 1 because 0 is title & desc for quiz
                                     JSONObject obj = jsonArray.getJSONObject(i);
 
-                                    // 2. Create and insert the question with the actual quiz ID
+                                    //question, 10 questions in 1 response
                                     Question question = new Question();
                                     question.quizId = (int) quizId;  // Use the actual quizId from the database
                                     question.questionText = obj.getString("question");
-
-                                    // Insert question and get its ID
                                     long questionId = db.questionDao().insert(question);
 
-                                    // 3. Get the options array
-                                    JSONArray optionsArray = obj.getJSONArray("options");  // NOTE: You were using quizObject here incorrectly
-
-                                    // Get the correct answer index
+                                    //options, 4 options for each question, so for loop runs 4 iterations
+                                    JSONArray optionsArray = obj.getJSONArray("options");
                                     int correctAnswerIndex = obj.getInt("answer");
-
-                                    // 4. Create and insert each option
                                     for (int y = 0; y < optionsArray.length(); y++) {
-                                        Option option = new Option();  // Create a new option object each time
+                                        Option option = new Option();
                                         option.optionText = optionsArray.getString(y);
                                         option.isCorrect = (y == correctAnswerIndex);
-                                        option.questionId = (int) questionId;  // Use the actual questionId
-
+                                        option.questionId = (int) questionId;
                                         db.optionDao().insert(option);
                                     }
                                 }
 
-                                // Update UI on the main thread when everything is done
                                 getActivity().runOnUiThread(() -> {
-                                    response_container.setText("Quiz stored successfully!");
+                                    Toast.makeText(getContext(), "Quiz stored successfully!", Toast.LENGTH_SHORT).show();
                                 });
                             } catch (JSONException e) {
                                 e.printStackTrace();
@@ -130,7 +120,6 @@ public class getData extends Fragment {
                     }
                     response_container.setText(result);
                 }
-
                 @Override
                 public void onError(String error) {
                     response_container.setText("Error: " + error);

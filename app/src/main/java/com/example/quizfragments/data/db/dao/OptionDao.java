@@ -25,4 +25,7 @@ public interface OptionDao {
 
     @Query("SELECT * FROM options WHERE optionId = :id")
     Option getOptionById(int id);
+
+    @Query("DELETE FROM options")
+    void deleteAllOptions();
 }

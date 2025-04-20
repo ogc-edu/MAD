@@ -79,6 +79,21 @@ public class QuizFragment extends Fragment {
                 });
             }).start();
         });
+        Button clearDB = view.findViewById(R.id.clearDB);
+        clearDB.setOnClickListener(v -> {
+            new Thread(() -> {
+                AppDatabase db2 = DatabaseClient.getInstance(requireContext()).getAppDatabase();
 
+                // Clear all tables in the correct order (to avoid foreign key constraints)
+                db2.optionDao().deleteAllOptions();
+                db2.questionDao().deleteAllQuestions();
+                db2.quizDao().deleteAllQuizzes();
+
+                // Show confirmation on UI thread
+                getActivity().runOnUiThread(() -> {
+                    Toast.makeText(getContext(), "Database cleared successfully", Toast.LENGTH_SHORT).show();
+                });
+            }).start();
+        });
     }
 }

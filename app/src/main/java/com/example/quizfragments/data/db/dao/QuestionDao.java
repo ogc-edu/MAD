@@ -25,4 +25,7 @@ public interface QuestionDao {
 
     @Query("SELECT * FROM questions WHERE questionId = :id")
     Question getQuestionById(int id);
+
+    @Query("DELETE FROM questions")
+    void deleteAllQuestions();
 }

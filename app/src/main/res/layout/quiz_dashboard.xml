@@ -27,28 +27,32 @@
         android:layout_alignParentEnd="true"
         android:layout_marginTop="10dp"
         android:text="Get all database data" />
-
-    <TextView
-        android:id="@+id/dbInfo"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/dbBtn"
-        android:layout_marginTop="10dp"
-        android:text="Nothing shown" />
-
     <Button
-        android:id="@+id/call_ai"
+        android:id="@+id/clearDB"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/dbInfo"
+        android:layout_below="@id/dbBtn"
         android:layout_alignParentEnd="true"
         android:layout_marginTop="10dp"
-        android:text="Call AI Generation" />
+        android:text="Clear db" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/questionRecyclerView"
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/call_ai"
-        android:layout_marginTop="16dp" />
+        android:layout_below="@id/clearDB">
+        <TextView
+            android:id="@+id/dbInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Nothing shown" />
+    </ScrollView>
+
+
+<!--    <androidx.recyclerview.widget.RecyclerView-->
+<!--        android:id="@+id/questionRecyclerView"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_below="@id/call_ai"-->
+<!--        android:layout_marginTop="16dp" />-->
 </RelativeLayout>

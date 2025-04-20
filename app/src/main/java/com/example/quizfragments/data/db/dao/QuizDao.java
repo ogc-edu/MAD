@@ -28,4 +28,7 @@ public interface QuizDao {
 
     @Query("SELECT * FROM quizzes WHERE quizId = :id")
     Quiz getQuizById(int id);
+
+    @Query("DELETE FROM quizzes")
+    void deleteAllQuizzes();
 }
