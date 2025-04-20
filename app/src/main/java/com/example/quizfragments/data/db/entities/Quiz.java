@@ -12,4 +12,8 @@ public class Quiz {
 
     public String title;
     public String description;
+
+    public String toString() {
+        return "Q ID: " + quizId + "\n" + "\nQuestion: " + title;
+    }
 }

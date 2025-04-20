@@ -12,7 +12,7 @@ import java.util.List;
 @Dao
 public interface OptionDao {
     @Insert
-    void insert(Option option);
+    long insert(Option option);  // Returns the ID of the inserted row
 
     @Update
     void update(Option option);
@@ -23,6 +23,6 @@ public interface OptionDao {
     @Query("SELECT * FROM options")
     List<Option> getAllOptions();
 
-    @Query("SELECT * FROM options WHERE optionId= :id")
-    Option getQuizById(int id);
+    @Query("SELECT * FROM options WHERE optionId = :id")
+    Option getOptionById(int id);
 }

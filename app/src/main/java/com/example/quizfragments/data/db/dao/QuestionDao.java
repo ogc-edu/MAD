@@ -12,7 +12,7 @@ import java.util.List;
 public interface QuestionDao {
 
     @Insert
-    void insert(Question question);
+    long insert(Question question);
 
     @Update
     void update(Question question);
@@ -20,8 +20,8 @@ public interface QuestionDao {
     @Delete
     void delete(Question question);
 
-    @Query("SELECT * FROM questions WHERE quizId = :quizId")
-    List<Question> getAllQuestions(int quizId);
+    @Query("SELECT * FROM questions")
+    List<Question> getAllQuestions();
 
     @Query("SELECT * FROM questions WHERE questionId = :id")
     Question getQuestionById(int id);
