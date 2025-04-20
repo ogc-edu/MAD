@@ -1,4 +1,4 @@
-package com.example.quizfragments;
+package com.example.quizfragments.data.api;
 
 import android.os.Handler;
 import android.os.Looper;

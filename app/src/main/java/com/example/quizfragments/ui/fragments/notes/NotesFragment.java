@@ -1,4 +1,4 @@
-package com.example.quizfragments;
+package com.example.quizfragments.ui.fragments.notes;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -10,6 +10,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import androidx.fragment.app.Fragment;
+
+import com.example.quizfragments.R;
+import com.example.quizfragments.data.api.AI;
 
 public class NotesFragment extends Fragment {
 

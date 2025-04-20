@@ -1,10 +1,14 @@
-package com.example.quizfragments;
+package com.example.quizfragments.ui.activities;
 
 import android.os.Bundle;
-import androidx.annotation.NonNull;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
+import com.example.quizfragments.ui.fragments.notes.NotesFragment;
+import com.example.quizfragments.R;
+import com.example.quizfragments.ui.fragments.quiz.QuizFragment;
+import com.example.quizfragments.ui.fragments.flashcard.FlashcardFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class MainActivity extends AppCompatActivity {

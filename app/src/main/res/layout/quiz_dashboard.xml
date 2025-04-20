@@ -2,10 +2,46 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-    <TextView
-        android:text="Quiz dashboard"
-        android:layout_gravity="center"
-        android:textSize="24sp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="16dp">
+
+        <EditText
+            android:id="@+id/textinput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" />
+
+        <Button
+            android:id="@+id/storeBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/textinput"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginTop="8dp"
+            android:text="Store in database" />
+
+        <Button
+            android:id="@+id/dbBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/storeBtn"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight='true'
+            android:layout_marginTop="10dp"
+            android:text="Get all database data" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/dbBtn"
+            android:layout_marginTop="10dp"
+            android:text="Nothing shown"
+            android:visibility="invisible"
+            android:id="@+id/dbInfo"/>
+
+    </RelativeLayout>
 </FrameLayout>
