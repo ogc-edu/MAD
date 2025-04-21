@@ -20,18 +20,39 @@
         android:text="Store in database" />
 
     <Button
-        android:id="@+id/dbBtn"
+        android:id="@+id/checkQuiz"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/storeBtn"
         android:layout_alignParentEnd="true"
         android:layout_marginTop="10dp"
-        android:text="Get all database data" />
+        android:text="Quiz" />
+
+    <Button
+        android:id="@+id/checkQuestion"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/storeBtn"
+        android:layout_toStartOf="@id/checkQuiz"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="10dp"
+        android:text="Ques" />
+
+
+    <Button
+        android:id="@+id/checkOption"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/storeBtn"
+        android:layout_toStartOf="@id/checkQuestion"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="10dp"
+        android:text="opt" />
     <Button
         android:id="@+id/clearDB"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/dbBtn"
+        android:layout_below="@id/checkOption"
         android:layout_alignParentEnd="true"
         android:layout_marginTop="10dp"
         android:text="Clear db" />

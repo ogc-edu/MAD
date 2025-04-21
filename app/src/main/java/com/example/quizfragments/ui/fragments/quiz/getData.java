@@ -44,7 +44,7 @@ public class getData extends Fragment {
                     .commit(); // Commit the transaction
         });
         call_ai.setOnClickListener(v -> {
-            String prompt = "Generate 11 multiple-choice quiz questions about Biology 1.\n" +
+            String prompt = "Generate 11 multiple-choice quiz questions about Biology.\n" +
                     "Each question must be in JSON format with the following structure:\n" +
                     "The first JSON object in JSON array gives the title and description for quiz, and must be in the format" +
                     "\n" +
@@ -60,13 +60,12 @@ public class getData extends Fragment {
                     "Do not include any extra text or explanation outside the JSON array.\n" +
                     "The answer is an int from 0 to 3 corresponding to the correct option index.";
             response_container.setText("Calling AI...");
-            Quiz quiz = new Quiz();
-            Question questions[] = new Question[10];
-            Option options[][] = new Option[10][4];
             AI.modelCall(prompt, new AI.ResponseCallback() {
                 @Override
                 public void onResponse(String result) {
-                    result = result.replaceAll("(?s)```(\\w+)?\\n", "").replaceAll("```", "");      //remove ``` from response
+                    result = result.replace("```json", "")
+                            .replace("```", "")
+                            .trim();
                     try {
                         JSONArray jsonArray = new JSONArray(result);        //turn string response into array of JSON
                         JSONObject quizObject = jsonArray.getJSONObject(0); //first object in array is title & description
