@@ -11,7 +11,7 @@ public class DatabaseClient {
         appDatabase = Room.databaseBuilder(
                 context.getApplicationContext(),
                 AppDatabase.class,
-                "quizfragments_db_v4"
+                "database"
         ).fallbackToDestructiveMigration().build();
     }
 
