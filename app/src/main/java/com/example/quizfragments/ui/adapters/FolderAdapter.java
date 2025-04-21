@@ -1,9 +1,11 @@
 package com.example.quizfragments.ui.adapters;
 
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -15,10 +17,14 @@ import com.example.quizfragments.data.db.DatabaseClient;
 import com.example.quizfragments.data.db.entities.Category;
 import com.example.quizfragments.data.db.entities.Folder;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class FolderAdapter extends RecyclerView.Adapter<FolderAdapter.FolderViewHolder> {
 
@@ -26,6 +32,8 @@ public class FolderAdapter extends RecyclerView.Adapter<FolderAdapter.FolderView
     private OnFolderClickListener listener;
     private Map<Integer, Category> categoryMap = new HashMap<>();
     private AppDatabase db;
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd", Locale.getDefault());
+    private String[] colors = {"#FF6B6B", "#4ECDC4", "#FFD166", "#6B5B95", "#88D8B0"};
 
     public interface OnFolderClickListener {
         void onFolderClick(Folder folder);
@@ -63,8 +71,32 @@ public class FolderAdapter extends RecyclerView.Adapter<FolderAdapter.FolderView
     @Override
     public void onBindViewHolder(@NonNull FolderViewHolder holder, int position) {
         Folder currentFolder = folders.get(position);
-        holder.titleTextView.setText(currentFolder.getTitle());
+        String title = currentFolder.getTitle();
+        holder.titleTextView.setText(title);
         holder.descriptionTextView.setText(currentFolder.getDescription());
+
+        // Set the avatar with the first letter of the title
+        if (title != null && !title.isEmpty()) {
+            holder.avatarTextView.setText(String.valueOf(title.charAt(0)).toUpperCase());
+        } else {
+            holder.avatarTextView.setText("F"); // Default for "Folder"
+        }
+
+        // Set avatar background drawable based on position
+        int avatarColorIndex = position % 5;
+        int[] avatarBackgrounds = {
+            R.drawable.avatar_circle_blue,
+            R.drawable.avatar_circle_red,
+            R.drawable.avatar_circle_green,
+            R.drawable.avatar_circle_yellow,
+            R.drawable.avatar_circle_purple
+        };
+        holder.avatarTextView.setBackgroundResource(avatarBackgrounds[avatarColorIndex]);
+
+        // Set the last edited date
+        long lastEditedTime = currentFolder.getUpdatedAt();
+        String formattedDate = formatLastEditedDate(lastEditedTime);
+        holder.lastEditedTextView.setText("Last edited: " + formattedDate);
 
         // Set category information if available
         Integer categoryId = currentFolder.getCategoryId();
@@ -81,11 +113,38 @@ public class FolderAdapter extends RecyclerView.Adapter<FolderAdapter.FolderView
                 }
             } catch (Exception e) {
                 // Use default color if parsing fails
-                holder.categoryIndicator.setBackgroundColor(Color.LTGRAY);
+                int indicatorColorIndex = position % colors.length;
+                holder.categoryIndicator.setBackgroundColor(Color.parseColor(colors[indicatorColorIndex]));
             }
         } else {
             holder.categoryTextView.setVisibility(View.GONE);
-            holder.categoryIndicator.setBackgroundColor(Color.LTGRAY);
+            int indicatorColorIndex = position % colors.length;
+            holder.categoryIndicator.setBackgroundColor(Color.parseColor(colors[indicatorColorIndex]));
+        }
+
+        // Set click listener for the arrow button
+        holder.arrowButton.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onFolderClick(currentFolder);
+            }
+        });
+    }
+
+    private String formatLastEditedDate(long timestamp) {
+        long now = System.currentTimeMillis();
+        long diff = now - timestamp;
+
+        // If edited today
+        if (diff < TimeUnit.DAYS.toMillis(1)) {
+            return "Today";
+        }
+        // If edited yesterday
+        else if (diff < TimeUnit.DAYS.toMillis(2)) {
+            return "Yesterday";
+        }
+        // Otherwise show the date
+        else {
+            return dateFormat.format(new Date(timestamp));
         }
     }
 
@@ -108,14 +167,20 @@ public class FolderAdapter extends RecyclerView.Adapter<FolderAdapter.FolderView
         private TextView titleTextView;
         private TextView descriptionTextView;
         private TextView categoryTextView;
+        private TextView lastEditedTextView;
+        private TextView avatarTextView;
         private View categoryIndicator;
+        private ImageButton arrowButton;
 
         public FolderViewHolder(@NonNull View itemView) {
             super(itemView);
             titleTextView = itemView.findViewById(R.id.folder_title);
             descriptionTextView = itemView.findViewById(R.id.folder_description);
             categoryTextView = itemView.findViewById(R.id.folder_category);
+            lastEditedTextView = itemView.findViewById(R.id.folder_last_edited);
+            avatarTextView = itemView.findViewById(R.id.folder_avatar);
             categoryIndicator = itemView.findViewById(R.id.category_indicator);
+            arrowButton = itemView.findViewById(R.id.folder_arrow_button);
 
             itemView.setOnClickListener(v -> {
                 int position = getAdapterPosition();

@@ -51,6 +51,7 @@
         android:layout_margin="16dp"
         android:contentDescription="Add new note"
         android:src="@android:drawable/ic_input_add"
-        app:tint="@android:color/white" />
+        app:tint="@android:color/white"
+        app:backgroundTint="?attr/colorAccent" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
