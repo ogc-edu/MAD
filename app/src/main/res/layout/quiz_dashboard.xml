@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/replaceThis"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp">
@@ -35,11 +36,19 @@
         android:layout_alignParentEnd="true"
         android:layout_marginTop="10dp"
         android:text="Clear db" />
+    <Button
+        android:id="@+id/startMainFragment"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/clearDB"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="10dp"
+        android:text="start fragment" />
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/clearDB">
+        android:layout_below="@id/startMainFragment">
         <TextView
             android:id="@+id/dbInfo"
             android:layout_width="match_parent"
@@ -47,12 +56,10 @@
             android:layout_marginTop="10dp"
             android:text="Nothing shown" />
     </ScrollView>
-
-
 <!--    <androidx.recyclerview.widget.RecyclerView-->
 <!--        android:id="@+id/questionRecyclerView"-->
 <!--        android:layout_width="match_parent"-->
 <!--        android:layout_height="wrap_content"-->
-<!--        android:layout_below="@id/call_ai"-->
+<!--        android:layout_below="@id/startMainFragment"-->
 <!--        android:layout_marginTop="16dp" />-->
 </RelativeLayout>

@@ -12,8 +12,26 @@ public class Quiz {
 
     public String title;
     public String description;
+    public int questionCount;
 
     public String toString() {
         return "Q ID: " + quizId + "\n" + "\nQuestion: " + title;
+    }
+
+    // Getters and setters
+    public void setId(int id) {
+        this.quizId = id;
+    }
+
+    public int getId() {
+        return quizId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public int getQuestionCount() {
+        return questionCount;
     }
 }

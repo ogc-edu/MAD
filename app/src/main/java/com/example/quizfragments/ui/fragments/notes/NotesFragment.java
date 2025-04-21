@@ -45,6 +45,15 @@ public class NotesFragment extends Fragment {
         AI.modelCall(prompt, new AI.ResponseCallback() {
             @Override
             public void onResponse(String result) {
+                if (result.startsWith("```json")) {
+                    // Remove the "```json" part (including backticks and json text)
+                    result = result.substring(7).trim(); // This removes the first 7 characters: "```json"
+
+                    // Optionally, if you want to remove the closing "```" as well
+                    if (result.endsWith("```")) {
+                        result = result.substring(0, result.length() - 3).trim(); // Removes the last 3 characters: "```"
+                    }
+                }
                 try {
                     JSONArray jsonArray = new JSONArray(result); // parse response in string format into JSON Array, then parse into individual JSON object
 

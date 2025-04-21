@@ -35,6 +35,17 @@ public class QuizFragment extends Fragment {
         Button getDB = view.findViewById(R.id.dbBtn);
         TextView showDB = view.findViewById(R.id.dbInfo);
         AppDatabase db = DatabaseClient.getInstance(requireContext()).getAppDatabase();
+        Button startFragment = view.findViewById(R.id.startMainFragment);
+
+        startFragment.setOnClickListener(v -> {
+            QuizMainpage quizFragment = new QuizMainpage();
+            requireActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, quizFragment) // replace with your FrameLayout ID
+                    .addToBackStack(null) // optional: lets user press back to return
+                    .commit();
+        });
+
 
         storeDB.setOnClickListener(v ->{
             String title = textToStore.getText().toString().trim();
