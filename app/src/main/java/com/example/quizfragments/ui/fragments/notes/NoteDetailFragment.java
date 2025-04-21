@@ -4,9 +4,28 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.KeyEvent;
+import android.view.inputmethod.EditorInfo;
+import static android.view.View.VISIBLE;
+import static android.view.View.GONE;
+import android.graphics.Typeface;
+import android.text.Html;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
+import android.text.style.StyleSpan;
+import android.text.style.UnderlineSpan;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -30,7 +49,28 @@ public class NoteDetailFragment extends Fragment {
     private EditText titleEditText;
     private EditText contentEditText;
     private Button saveButton;
+    private TextView formatStatusText;
+    private TextView lastEditedText;
+    private TextView categoryTitleText;
+    private ImageButton backButton;
     private AppDatabase db;
+
+    private ToggleButton toggleBold;
+    private ToggleButton toggleItalic;
+    private ToggleButton toggleUnderline;
+    private ToggleButton toggleBullet;
+    private ToggleButton toggleChecklist;
+
+    // Format state flags
+    private boolean isBoldActive = false;
+    private boolean isItalicActive = false;
+    private boolean isUnderlineActive = false;
+    private boolean isBulletActive = false;
+    private boolean isChecklistActive = false;
+
+    // Current format tags
+    private StringBuilder currentFormatStart = new StringBuilder();
+    private StringBuilder currentFormatEnd = new StringBuilder();
 
     public static NoteDetailFragment newInstance(int folderId, int noteId) {
         NoteDetailFragment fragment = new NoteDetailFragment();
@@ -68,6 +108,42 @@ public class NoteDetailFragment extends Fragment {
         titleEditText = view.findViewById(R.id.note_title_edit);
         contentEditText = view.findViewById(R.id.note_content_edit);
         saveButton = view.findViewById(R.id.btn_save_note);
+        formatStatusText = view.findViewById(R.id.format_status_text);
+        lastEditedText = view.findViewById(R.id.last_edited_text);
+        categoryTitleText = view.findViewById(R.id.note_category_title);
+        backButton = view.findViewById(R.id.btn_back);
+
+        // Initialize formatting toggle buttons
+        toggleBold = view.findViewById(R.id.toggle_bold);
+        toggleItalic = view.findViewById(R.id.toggle_italic);
+        toggleUnderline = view.findViewById(R.id.toggle_underline);
+        toggleBullet = view.findViewById(R.id.toggle_bullet);
+        toggleChecklist = view.findViewById(R.id.toggle_checklist);
+
+        // Setup back button
+        backButton.setOnClickListener(v -> {
+            requireActivity().getSupportFragmentManager().popBackStack();
+        });
+
+        // Make sure toggle buttons are not checked initially
+        toggleBold.setChecked(false);
+        toggleItalic.setChecked(false);
+        toggleUnderline.setChecked(false);
+        toggleBullet.setChecked(false);
+        toggleChecklist.setChecked(false);
+        isChecklistActive = false;
+
+        // Set current date and time for last edited
+        updateLastEditedTime();
+
+        // Set folder name as category title
+        setCategoryTitle();
+
+        // Set up toggle button listeners
+        setupFormatToggleButtons();
+
+        // Show a toast to indicate formatting is available
+        Toast.makeText(requireContext(), "Toggle format buttons to activate formatting modes. Press Enter to start a new line.", Toast.LENGTH_LONG).show();
 
         // If in edit mode, load the note
         if (isEditMode) {
@@ -76,6 +152,28 @@ public class NoteDetailFragment extends Fragment {
 
         // Setup save button click listener
         saveButton.setOnClickListener(v -> saveNote());
+
+        // Setup key listener for direct key events
+        contentEditText.setOnKeyListener((v, keyCode, event) -> {
+            // Check if Enter key was pressed
+            if (keyCode == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN) {
+                // Handle Enter key press with active formatting
+                if (isBulletActive || isChecklistActive || isBoldActive || isItalicActive || isUnderlineActive) {
+                    handleEnterKeyWithFormatting();
+                    return true; // We handled the event
+                }
+            }
+            return false; // Let the default handler process other keys
+        });
+
+        // Setup click listener for toggling checkboxes
+        contentEditText.setOnClickListener(v -> {
+            // Check if we're in checklist mode or if there are checkboxes in the text
+            if (isChecklistActive || contentEditText.getText().toString().contains("☐") ||
+                contentEditText.getText().toString().contains("☑")) {
+                toggleCheckboxAtCursor();
+            }
+        });
     }
 
     private void loadNote() {
@@ -86,7 +184,18 @@ public class NoteDetailFragment extends Fragment {
                     requireActivity().runOnUiThread(() -> {
                         if (isAdded() && currentNote != null) {
                             titleEditText.setText(currentNote.getTitle());
-                            contentEditText.setText(currentNote.getContent());
+
+                            // Set content
+                            String content = currentNote.getContent();
+                            contentEditText.setText(content);
+
+                            // Reset toggle buttons
+                            toggleBold.setChecked(false);
+                            toggleItalic.setChecked(false);
+                            toggleUnderline.setChecked(false);
+                            toggleBullet.setChecked(false);
+
+                            Toast.makeText(requireContext(), "Note loaded - toggle format buttons to activate formatting modes", Toast.LENGTH_SHORT).show();
                         }
                     });
                 }
@@ -101,6 +210,525 @@ public class NoteDetailFragment extends Fragment {
         }).start();
     }
 
+    private void setupFormatToggleButtons() {
+        // Set up toggle button listeners for format mode switching
+        toggleBold.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            isBoldActive = isChecked;
+            updateFormatState();
+            String message = isChecked ? "Bold mode ON" : "Bold mode OFF";
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+
+            // Show format status when active
+            formatStatusText.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+        });
+
+        toggleItalic.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            isItalicActive = isChecked;
+            updateFormatState();
+            String message = isChecked ? "Italic mode ON" : "Italic mode OFF";
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+
+            // Show format status when active
+            formatStatusText.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+        });
+
+        toggleUnderline.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            isUnderlineActive = isChecked;
+            updateFormatState();
+            String message = isChecked ? "Underline mode ON" : "Underline mode OFF";
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+
+            // Show format status when active
+            formatStatusText.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+        });
+
+        toggleBullet.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            isBulletActive = isChecked;
+            String message = isChecked ? "Bullet mode ON" : "Bullet mode OFF";
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+
+            // If bullet mode is activated, add a bullet to the current line if needed
+            if (isChecked) {
+                addBulletToCurrentLine();
+            } else {
+                // If bullet mode is deactivated, remove bullet from the current line if it exists
+                removeBulletFromCurrentLine();
+            }
+
+            // Update the format status indicator
+            updateFormatStatusText();
+
+            // Show format status when active
+            formatStatusText.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+        });
+
+        // Checklist button functionality
+        toggleChecklist.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            isChecklistActive = isChecked;
+            String message = isChecked ? "Checklist mode ON" : "Checklist mode OFF";
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+
+            // If checklist mode is activated, add a checkbox to the current line if needed
+            if (isChecked) {
+                addCheckboxToCurrentLine();
+            }
+
+            // Update the format status indicator
+            updateFormatStatusText();
+
+            // Show format status when active
+            formatStatusText.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+        });
+
+        // Add text change listener to apply formatting as user types
+        contentEditText.addTextChangedListener(new TextWatcher() {
+            private int cursorPosition = 0;
+            private boolean isChanging = false;
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                if (!isChanging) {
+                    cursorPosition = contentEditText.getSelectionStart();
+                }
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                // Not needed
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (isChanging) return;
+
+                isChanging = true;
+
+                try {
+                    // Apply formatting to newly typed text if any format is active
+                    if (isBoldActive || isItalicActive || isUnderlineActive) {
+                        int currentPosition = contentEditText.getSelectionStart();
+
+                        // Safety check for valid position
+                        if (currentPosition < 0) currentPosition = 0;
+                        if (currentPosition > s.length()) currentPosition = s.length();
+
+                        // Safety check for cursor position
+                        if (cursorPosition < 0) cursorPosition = 0;
+                        if (cursorPosition > s.length()) cursorPosition = s.length();
+
+                        // Only apply formatting if text was added (not deleted)
+                        if (currentPosition > cursorPosition) {
+                            applyFormatToNewText(cursorPosition, currentPosition);
+                        }
+                    }
+
+                    // We don't need to handle new lines here anymore
+                    // The handleEnterKeyWithFormatting method takes care of it
+                    // This avoids duplicate handling of Enter key presses
+                } catch (Exception e) {
+                    // Log the error but don't crash
+                    e.printStackTrace();
+                }
+
+                isChanging = false;
+            }
+        });
+    }
+
+    /**
+     * Handles Enter key press when formatting is active.
+     * This method ensures that the new line inherits the formatting from the previous line.
+     */
+    private void handleEnterKeyWithFormatting() {
+        try {
+            // Get current position and text
+            int position = contentEditText.getSelectionStart();
+            Editable editable = contentEditText.getText();
+            String text = editable.toString();
+
+            // Check if the current line is empty (except for bullet/checkbox)
+            boolean isCurrentLineEmpty = false;
+            if (position > 0) {
+                int lineStart = text.lastIndexOf('\n', position - 1) + 1;
+                if (lineStart < 0) lineStart = 0;
+
+                String currentLine = text.substring(lineStart, position);
+                // Check if line is empty or only contains bullet/checkbox
+                isCurrentLineEmpty = currentLine.isEmpty() ||
+                                    currentLine.equals("• ") ||
+                                    currentLine.equals("☐ ") ||
+                                    currentLine.equals("☑ ");
+
+                // If the current line is empty and has a bullet/checkbox, remove it and return
+                if (isCurrentLineEmpty && (currentLine.equals("• ") ||
+                                         currentLine.equals("☐ ") ||
+                                         currentLine.equals("☑ "))) {
+                    // Remove the bullet/checkbox
+                    editable.delete(lineStart, lineStart + 2);
+                    // Insert a newline
+                    editable.insert(lineStart, "\n");
+                    // Set cursor position
+                    contentEditText.setSelection(lineStart + 1);
+                    return;
+                }
+            }
+
+            // Insert a newline character
+            editable.insert(position, "\n");
+
+            // Update position after inserting newline
+            position++;
+            contentEditText.setSelection(position);
+
+            // If text formatting is active, prepare for the new line
+            if (isBoldActive || isItalicActive || isUnderlineActive) {
+                // Update format state
+                updateFormatState();
+
+                // Apply formatting placeholder at the new position
+                if (currentFormatStart.length() > 0) {
+                    applyFormattingPlaceholder();
+                }
+            }
+
+            // If bullet mode is active and the current line wasn't empty, add a bullet to the new line
+            if (isBulletActive && !isCurrentLineEmpty) {
+                addBulletToCurrentLine();
+            }
+
+            // If checklist mode is active and the current line wasn't empty, add a checkbox to the new line
+            if (isChecklistActive && !isCurrentLineEmpty) {
+                addCheckboxToCurrentLine();
+            }
+        } catch (Exception e) {
+            // Log the error but don't crash
+            e.printStackTrace();
+        }
+    }
+
+    private void updateFormatState() {
+        // Update the current format tags based on active formats
+        currentFormatStart.setLength(0);
+        currentFormatEnd.setLength(0);
+
+        if (isBoldActive) {
+            currentFormatStart.append("<b>");
+            currentFormatEnd.insert(0, "</b>");
+        }
+
+        if (isItalicActive) {
+            currentFormatStart.append("<i>");
+            currentFormatEnd.insert(0, "</i>");
+        }
+
+        if (isUnderlineActive) {
+            currentFormatStart.append("<u>");
+            currentFormatEnd.insert(0, "</u>");
+        }
+
+        // Update the format status indicator
+        updateFormatStatusText();
+    }
+
+    private void updateFormatStatusText() {
+        StringBuilder status = new StringBuilder("Active formats: ");
+        boolean hasActiveFormats = false;
+
+        if (isBoldActive) {
+            status.append("Bold");
+            hasActiveFormats = true;
+        }
+
+        if (isItalicActive) {
+            if (hasActiveFormats) status.append(", ");
+            status.append("Italic");
+            hasActiveFormats = true;
+        }
+
+        if (isUnderlineActive) {
+            if (hasActiveFormats) status.append(", ");
+            status.append("Underline");
+            hasActiveFormats = true;
+        }
+
+        if (isBulletActive) {
+            if (hasActiveFormats) status.append(", ");
+            status.append("Bullet");
+            hasActiveFormats = true;
+        }
+
+        if (isChecklistActive) {
+            if (hasActiveFormats) status.append(", ");
+            status.append("Checklist");
+            hasActiveFormats = true;
+        }
+
+        if (!hasActiveFormats) {
+            status.append("None");
+        }
+
+        formatStatusText.setText(status.toString());
+    }
+
+    private void applyFormatToNewText(int start, int end) {
+        if (currentFormatStart.length() == 0) return; // No active formatting
+
+        try {
+            Editable editable = contentEditText.getText();
+
+            // Safety check for valid indices
+            int textLength = editable.length();
+            if (start < 0) start = 0;
+            if (end > textLength) end = textLength;
+            if (start > end) return; // Invalid selection
+
+            String newText = editable.toString().substring(start, end);
+            String formattedText = currentFormatStart.toString() + newText + currentFormatEnd.toString();
+
+            // Replace the new text with formatted version
+            editable.replace(start, end, Html.fromHtml(formattedText, Html.FROM_HTML_MODE_COMPACT));
+
+            // Restore cursor position safely
+            int newPosition = start + newText.length();
+            if (newPosition <= editable.length()) {
+                contentEditText.setSelection(newPosition);
+            }
+        } catch (Exception e) {
+            // Log the error but don't crash
+            e.printStackTrace();
+            Toast.makeText(requireContext(), "Error applying formatting", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * Applies a placeholder character with formatting at the current position.
+     * This is used to ensure that when the user presses Enter, the new line
+     * inherits the formatting from the previous line.
+     */
+    private void applyFormattingPlaceholder() {
+        if (currentFormatStart.length() == 0) return; // No active formatting
+
+        try {
+            int position = contentEditText.getSelectionStart();
+            Editable editable = contentEditText.getText();
+
+            // Safety check for valid position
+            if (position < 0 || position > editable.length()) {
+                position = Math.max(0, Math.min(position, editable.length()));
+            }
+
+            // Create a zero-width space with formatting
+            String formattedSpace = currentFormatStart.toString() + "\u200B" + currentFormatEnd.toString();
+
+            // Insert the formatted space at the current position
+            editable.insert(position, Html.fromHtml(formattedSpace, Html.FROM_HTML_MODE_COMPACT));
+
+            // Restore cursor position
+            contentEditText.setSelection(position + 1);
+        } catch (Exception e) {
+            // Log the error but don't crash
+            e.printStackTrace();
+        }
+    }
+
+    private void addBulletToCurrentLine() {
+        try {
+            int position = contentEditText.getSelectionStart();
+            Editable editable = contentEditText.getText();
+            String text = editable.toString();
+
+            // Safety check for valid position
+            if (position < 0 || position > text.length()) {
+                position = Math.max(0, Math.min(position, text.length()));
+            }
+
+            // Find the start of the current line
+            int lineStart = position > 0 ? text.lastIndexOf('\n', position - 1) + 1 : 0;
+            if (lineStart < 0) lineStart = 0;
+
+            // Check if the line already has a bullet
+            int prefixEnd = Math.min(lineStart + 2, text.length());
+            String linePrefix = text.substring(lineStart, prefixEnd);
+            if (!linePrefix.equals("• ")) {
+                // Add bullet
+                editable.insert(lineStart, "• ");
+
+                // Adjust cursor position safely
+                int newPosition = position + 2;
+                if (newPosition <= editable.length()) {
+                    contentEditText.setSelection(newPosition);
+                }
+            }
+        } catch (Exception e) {
+            // Log the error but don't crash
+            e.printStackTrace();
+            Toast.makeText(requireContext(), "Error adding bullet", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * Removes the bullet from the current line if it exists
+     */
+    private void removeBulletFromCurrentLine() {
+        try {
+            int position = contentEditText.getSelectionStart();
+            Editable editable = contentEditText.getText();
+            String text = editable.toString();
+
+            // Safety check for valid position
+            if (position < 0 || position > text.length()) {
+                position = Math.max(0, Math.min(position, text.length()));
+            }
+
+            // Find the start of the current line
+            int lineStart = position > 0 ? text.lastIndexOf('\n', position - 1) + 1 : 0;
+            if (lineStart < 0) lineStart = 0;
+
+            // Check if the line has a bullet
+            if (text.length() >= lineStart + 2) {
+                String linePrefix = text.substring(lineStart, lineStart + 2);
+                if (linePrefix.equals("• ")) {
+                    // Remove bullet
+                    editable.delete(lineStart, lineStart + 2);
+
+                    // Adjust cursor position safely
+                    int newPosition = Math.max(0, position - 2);
+                    if (newPosition <= editable.length()) {
+                        contentEditText.setSelection(newPosition);
+                    }
+
+                    Toast.makeText(requireContext(), "Bullet removed", Toast.LENGTH_SHORT).show();
+                }
+            }
+        } catch (Exception e) {
+            // Log the error but don't crash
+            e.printStackTrace();
+            Toast.makeText(requireContext(), "Error removing bullet", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void updateLastEditedTime() {
+        // Get current time
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault());
+        String currentTime = sdf.format(new java.util.Date());
+
+        // Update the last edited text
+        lastEditedText.setText("Last edited: Today, " + currentTime);
+    }
+
+    /**
+     * Sets the category title based on the folder name
+     */
+    private void setCategoryTitle() {
+        // In a real app, you would fetch the folder name from the database
+        // For now, we'll use a placeholder or the folder ID
+        new Thread(() -> {
+            try {
+                // Try to get folder name from database
+                String folderName = "Notes";
+                try {
+                    folderName = db.folderDao().getFolderById(folderId).getTitle();
+                } catch (Exception e) {
+                    // If folder not found, use default name
+                    folderName = "Notes";
+                }
+
+                final String finalFolderName = folderName;
+                if (isAdded() && getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        categoryTitleText.setText(finalFolderName);
+                    });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    /**
+     * Toggles the checkbox state at the current cursor position
+     */
+    private void toggleCheckboxAtCursor() {
+        try {
+            int position = contentEditText.getSelectionStart();
+            Editable editable = contentEditText.getText();
+            String text = editable.toString();
+
+            // Safety check for valid position
+            if (position < 0 || position > text.length()) {
+                position = Math.max(0, Math.min(position, text.length()));
+            }
+
+            // Find the start of the current line
+            int lineStart = position > 0 ? text.lastIndexOf('\n', position - 1) + 1 : 0;
+            if (lineStart < 0) lineStart = 0;
+
+            // Define checkbox characters
+            String checkboxUnchecked = "☐ "; // Unicode for unchecked box
+            String checkboxChecked = "☑ "; // Unicode for checked box
+
+            // Check if the line starts with a checkbox
+            if (text.length() >= lineStart + 2) {
+                String linePrefix = text.substring(lineStart, lineStart + 2);
+
+                if (linePrefix.equals(checkboxUnchecked.substring(0, 2))) {
+                    // Toggle from unchecked to checked
+                    editable.replace(lineStart, lineStart + 2, checkboxChecked.substring(0, 2));
+                    Toast.makeText(requireContext(), "Task marked as completed", Toast.LENGTH_SHORT).show();
+                } else if (linePrefix.equals(checkboxChecked.substring(0, 2))) {
+                    // Toggle from checked to unchecked
+                    editable.replace(lineStart, lineStart + 2, checkboxUnchecked.substring(0, 2));
+                    Toast.makeText(requireContext(), "Task marked as incomplete", Toast.LENGTH_SHORT).show();
+                }
+            }
+        } catch (Exception e) {
+            // Log the error but don't crash
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Adds a checkbox to the current line
+     */
+    private void addCheckboxToCurrentLine() {
+        try {
+            int position = contentEditText.getSelectionStart();
+            Editable editable = contentEditText.getText();
+            String text = editable.toString();
+
+            // Safety check for valid position
+            if (position < 0 || position > text.length()) {
+                position = Math.max(0, Math.min(position, text.length()));
+            }
+
+            // Find the start of the current line
+            int lineStart = position > 0 ? text.lastIndexOf('\n', position - 1) + 1 : 0;
+            if (lineStart < 0) lineStart = 0;
+
+            // Check if the line already has a checkbox
+            String checkboxUnchecked = "☐ "; // Unicode for unchecked box
+            String checkboxChecked = "☑ "; // Unicode for checked box
+
+            int prefixEnd = Math.min(lineStart + 2, text.length());
+            String linePrefix = text.substring(lineStart, prefixEnd);
+
+            if (!linePrefix.equals(checkboxUnchecked) && !linePrefix.equals(checkboxChecked)) {
+                // Add unchecked checkbox
+                editable.insert(lineStart, checkboxUnchecked);
+
+                // Adjust cursor position safely
+                int newPosition = position + 2;
+                if (newPosition <= editable.length()) {
+                    contentEditText.setSelection(newPosition);
+                }
+            }
+        } catch (Exception e) {
+            // Log the error but don't crash
+            e.printStackTrace();
+            Toast.makeText(requireContext(), "Error adding checkbox", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private void saveNote() {
         String title = titleEditText.getText().toString().trim();
         String content = contentEditText.getText().toString().trim();
@@ -109,6 +737,12 @@ public class NoteDetailFragment extends Fragment {
             titleEditText.setError("Title cannot be empty");
             return;
         }
+
+        // Update last edited time
+        updateLastEditedTime();
+
+        // Show a toast to indicate we're saving the note with formatting
+        Toast.makeText(requireContext(), "Saving note with formatting...", Toast.LENGTH_SHORT).show();
 
         new Thread(() -> {
             try {
