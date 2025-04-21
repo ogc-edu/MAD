@@ -53,7 +53,11 @@ public class FolderAdapter extends RecyclerView.Adapter<FolderAdapter.FolderView
                 for (Category category : categories) {
                     categoryMap.put(category.getId(), category);
                 }
-                notifyDataSetChanged();
+                // Use main thread for UI updates
+                android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+                mainHandler.post(() -> {
+                    notifyDataSetChanged();
+                });
             } catch (Exception e) {
                 e.printStackTrace();
             }
