@@ -116,6 +116,20 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
         notifyDataSetChanged();
     }
 
+    public void deleteNote(int position) {
+        if (position >= 0 && position < notes.size()) {
+            notes.remove(position);
+            notifyItemRemoved(position);
+        }
+    }
+
+    public Note getNoteAt(int position) {
+        if (position >= 0 && position < notes.size()) {
+            return notes.get(position);
+        }
+        return null;
+    }
+
     class NoteViewHolder extends RecyclerView.ViewHolder {
         private TextView titleTextView;
         private TextView contentPreviewTextView;

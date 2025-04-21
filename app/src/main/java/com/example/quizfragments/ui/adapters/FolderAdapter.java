@@ -158,6 +158,20 @@ public class FolderAdapter extends RecyclerView.Adapter<FolderAdapter.FolderView
         notifyDataSetChanged();
     }
 
+    public void deleteFolder(int position) {
+        if (position >= 0 && position < folders.size()) {
+            folders.remove(position);
+            notifyItemRemoved(position);
+        }
+    }
+
+    public Folder getFolderAt(int position) {
+        if (position >= 0 && position < folders.size()) {
+            return folders.get(position);
+        }
+        return null;
+    }
+
     public void setDatabase(AppDatabase db) {
         this.db = db;
         loadCategories();

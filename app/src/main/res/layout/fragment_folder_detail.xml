@@ -20,6 +20,17 @@
             android:textSize="20sp"
             android:textStyle="bold" />
 
+        <TextView
+            android:id="@+id/note_swipe_hint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="Tip: Swipe left to delete notes"
+            android:textSize="14sp"
+            android:textStyle="italic"
+            android:gravity="center"
+            android:textColor="#757575" />
+
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">

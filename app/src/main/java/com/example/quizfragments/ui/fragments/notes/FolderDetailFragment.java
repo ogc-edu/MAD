@@ -12,6 +12,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -76,6 +77,40 @@ public class FolderDetailFragment extends Fragment implements NoteAdapter.OnNote
         notesRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         noteAdapter = new NoteAdapter(this);
         notesRecyclerView.setAdapter(noteAdapter);
+
+        // Setup swipe to delete
+        ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                return false; // We don't want drag & drop
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                final int position = viewHolder.getAdapterPosition();
+                final Note note = noteAdapter.getNoteAt(position);
+
+                // Show confirmation dialog
+                new AlertDialog.Builder(requireContext())
+                    .setTitle("Delete Note")
+                    .setMessage("Are you sure you want to delete this note? This action cannot be undone.")
+                    .setPositiveButton("Delete", (dialog, which) -> {
+                        // Delete note from database
+                        deleteNote(note, position);
+                    })
+                    .setNegativeButton("Cancel", (dialog, which) -> {
+                        // Cancel deletion and restore the swiped item
+                        noteAdapter.notifyItemChanged(position);
+                    })
+                    .setOnCancelListener(dialog -> {
+                        // Also restore on dialog cancel
+                        noteAdapter.notifyItemChanged(position);
+                    })
+                    .show();
+            }
+        };
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleCallback);
+        itemTouchHelper.attachToRecyclerView(notesRecyclerView);
 
         // Load folder and notes
         loadFolder();
@@ -153,5 +188,43 @@ public class FolderDetailFragment extends Fragment implements NoteAdapter.OnNote
                 .replace(R.id.fragment_container, noteDetailFragment)
                 .addToBackStack(null)
                 .commit();
+    }
+
+    public void onNoteDelete(Note note, int position) {
+        // This method is called from the adapter when a note is deleted
+        // We don't need to implement it here since we're handling deletion in the swipe callback
+    }
+
+    private void deleteNote(Note note, int position) {
+        new Thread(() -> {
+            try {
+                // Delete the note from the database
+                db.noteDao().delete(note);
+
+                if (isAdded() && getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        // Remove from adapter
+                        noteAdapter.deleteNote(position);
+
+                        // Show empty view if no notes left
+                        if (noteAdapter.getItemCount() == 0) {
+                            notesRecyclerView.setVisibility(View.GONE);
+                            emptyNotesView.setVisibility(View.VISIBLE);
+                        }
+
+                        Toast.makeText(requireContext(), "Note deleted", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                if (isAdded() && getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        // Restore the item in the adapter
+                        noteAdapter.notifyItemChanged(position);
+                        Toast.makeText(requireContext(), "Error deleting note: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    });
+                }
+            }
+        }).start();
     }
 }

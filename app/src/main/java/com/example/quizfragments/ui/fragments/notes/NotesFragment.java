@@ -1,6 +1,8 @@
 package com.example.quizfragments.ui.fragments.notes;
 
 import android.app.AlertDialog;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,6 +17,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.ItemTouchHelper;
 
 import com.example.quizfragments.R;
 import com.example.quizfragments.data.db.AppDatabase;
@@ -37,6 +40,8 @@ public class NotesFragment extends Fragment implements FolderAdapter.OnFolderCli
     private AppDatabase db;
     private List<Category> categories = new ArrayList<>();
     private Integer selectedCategoryId = null;
+    private static final String PREFS_NAME = "NotesAppPrefs";
+    private static final String PREF_SWIPE_TIP_SHOWN = "swipe_tip_shown";
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -62,12 +67,49 @@ public class NotesFragment extends Fragment implements FolderAdapter.OnFolderCli
         folderAdapter.setDatabase(db);
         foldersRecyclerView.setAdapter(folderAdapter);
 
+        // Setup swipe to delete
+        ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                return false; // We don't want drag & drop
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                final int position = viewHolder.getAdapterPosition();
+                final Folder folder = folderAdapter.getFolderAt(position);
+
+                // Show confirmation dialog
+                new AlertDialog.Builder(requireContext())
+                    .setTitle("Delete Folder")
+                    .setMessage("Are you sure you want to delete this folder? This action cannot be undone.")
+                    .setPositiveButton("Delete", (dialog, which) -> {
+                        // Delete folder from database
+                        deleteFolder(folder, position);
+                    })
+                    .setNegativeButton("Cancel", (dialog, which) -> {
+                        // Cancel deletion and restore the swiped item
+                        folderAdapter.notifyItemChanged(position);
+                    })
+                    .setOnCancelListener(dialog -> {
+                        // Also restore on dialog cancel
+                        folderAdapter.notifyItemChanged(position);
+                    })
+                    .show();
+            }
+        };
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleCallback);
+        itemTouchHelper.attachToRecyclerView(foldersRecyclerView);
+
         // Load folders and categories
         loadFolders();
         loadCategories();
 
         // Setup FAB click listener
         fabAddFolder.setOnClickListener(v -> showCreateFolderDialog());
+
+        // Show swipe tip dialog if it's the first time
+        showSwipeTipIfNeeded();
     }
 
     private void loadCategories() {
@@ -222,5 +264,69 @@ public class NotesFragment extends Fragment implements FolderAdapter.OnFolderCli
                 .replace(R.id.fragment_container, folderDetailFragment)
                 .addToBackStack(null)
                 .commit();
+    }
+
+    public void onFolderDelete(Folder folder, int position) {
+        // This method is called from the adapter when a folder is deleted
+        // We don't need to implement it here since we're handling deletion in the swipe callback
+    }
+
+    private void showSwipeTipIfNeeded() {
+        // Check if we've shown the tip before
+        SharedPreferences prefs = requireActivity().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        boolean tipShown = prefs.getBoolean(PREF_SWIPE_TIP_SHOWN, false);
+
+        if (!tipShown) {
+            // Show the tip dialog
+            new AlertDialog.Builder(requireContext())
+                .setTitle("Tip")
+                .setMessage("You can delete folders and notes by swiping left.\n\nDeleting a folder will also delete all notes inside it. Please be careful.")
+                .setPositiveButton("Got it", (dialog, which) -> {
+                    // Mark the tip as shown
+                    prefs.edit().putBoolean(PREF_SWIPE_TIP_SHOWN, true).apply();
+                })
+                .setNegativeButton("Don't show again", (dialog, which) -> {
+                    // Mark the tip as shown
+                    prefs.edit().putBoolean(PREF_SWIPE_TIP_SHOWN, true).apply();
+                })
+                .setCancelable(false)
+                .show();
+        }
+    }
+
+    private void deleteFolder(Folder folder, int position) {
+        new Thread(() -> {
+            try {
+                // First delete all notes in this folder
+                db.noteDao().deleteAllByFolderId(folder.getId());
+
+                // Then delete the folder itself
+                db.folderDao().delete(folder);
+
+                if (isAdded() && getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        // Remove from adapter
+                        folderAdapter.deleteFolder(position);
+
+                        // Show empty view if no folders left
+                        if (folderAdapter.getItemCount() == 0) {
+                            foldersRecyclerView.setVisibility(View.GONE);
+                            emptyView.setVisibility(View.VISIBLE);
+                        }
+
+                        Toast.makeText(requireContext(), "Folder deleted", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                if (isAdded() && getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        // Restore the item in the adapter
+                        folderAdapter.notifyItemChanged(position);
+                        Toast.makeText(requireContext(), "Error deleting folder: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    });
+                }
+            }
+        }).start();
     }
 }
