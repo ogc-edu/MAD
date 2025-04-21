@@ -1,7 +1,37 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.QuizFragments" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <!-- Night mode theme colors -->
+        <item name="colorPrimary">@color/night_primary</item>
+        <item name="colorPrimaryDark">@color/night_primary_dark</item>
+        <item name="colorPrimaryVariant">@color/night_primary_dark</item>
+        <item name="colorAccent">@color/night_accent</item>
+        <item name="colorSecondary">@color/night_accent</item>
+        <item name="colorOnSecondary">@color/night_primary_text</item>
+        <item name="colorSurface">@color/black</item>
+        <item name="colorOnSurface">@color/night_primary_text</item>
+        <item name="android:textColorPrimary">@color/night_primary_text</item>
+        <item name="android:textColorSecondary">@color/night_secondary_text</item>
+        <!-- Navigation bar and button colors -->
+        <item name="colorControlNormal">@color/night_divider</item>
+        <item name="android:navigationBarColor">@color/night_primary</item>
+        <item name="android:statusBarColor">@color/night_primary_dark</item>
+        <item name="android:windowBackground">@color/black</item>
+        <!-- Button colors -->
+        <item name="colorOnPrimary">@color/night_primary_text</item>
+        <item name="colorContainer">@color/night_accent</item>
+        <item name="colorOnContainer">@color/night_primary_text</item>
+        <!-- Navigation bar colors -->
+        <item name="bottomNavigationStyle">@style/Widget.App.BottomNavigationView.Night</item>
+    </style>
+
+    <!-- Night mode bottom navigation view -->
+    <style name="Widget.App.BottomNavigationView.Night" parent="Widget.Material3.BottomNavigationView">
+        <item name="materialThemeOverlay">@style/ThemeOverlay.App.BottomNavigationView.Night</item>
+    </style>
+
+    <style name="ThemeOverlay.App.BottomNavigationView.Night" parent="">
+        <item name="colorSurface">@color/night_primary</item>
+        <item name="colorOnSurfaceVariant">@color/night_primary_text</item>
     </style>
 </resources>

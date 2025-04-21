@@ -2,4 +2,22 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!--Theme colors - Day mode -->
+    <color name="primary">#3F51B5</color>
+    <color name="primary_dark">#303F9F</color>
+    <color name="primary_light">#C5CAE9</color>
+    <color name="accent">#FF4081</color>
+    <color name="primary_text">#212121</color>
+    <color name="secondary_text">#757575</color>
+    <color name="divider">#BDBDBD</color>
+
+    <!-- Theme colors - Night mode -->
+    <color name="night_primary">#7986CB</color>
+    <color name="night_primary_dark">#3949AB</color>
+    <color name="night_primary_light">#9FA8DA</color>
+    <color name="night_accent">#FF80AB</color>
+    <color name="night_primary_text">#FFFFFF</color>
+    <color name="night_secondary_text">#B3FFFFFF</color>
+    <color name="night_divider">#616161</color>
 </resources>

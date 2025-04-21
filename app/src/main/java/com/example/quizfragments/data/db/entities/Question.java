@@ -1,8 +1,9 @@
 package com.example.quizfragments.data.db.entities;
 
 import androidx.room.Entity;
-import androidx.room.PrimaryKey;
 import androidx.room.ForeignKey;
+import androidx.room.Index;
+import androidx.room.PrimaryKey;
 
 @Entity(
         tableName = "questions",
@@ -11,7 +12,8 @@ import androidx.room.ForeignKey;
                 parentColumns = "quizId",
                 childColumns = "quizId",
                 onDelete = ForeignKey.CASCADE
-        )
+        ),
+        indices = {@Index("quizId")}
 )
 public class Question {
 
