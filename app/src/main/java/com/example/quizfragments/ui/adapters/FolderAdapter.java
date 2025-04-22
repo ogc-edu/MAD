@@ -1,7 +1,6 @@
 package com.example.quizfragments.ui.adapters;
 
 import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,7 +12,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.quizfragments.R;
 import com.example.quizfragments.data.db.AppDatabase;
-import com.example.quizfragments.data.db.DatabaseClient;
 import com.example.quizfragments.data.db.entities.Category;
 import com.example.quizfragments.data.db.entities.Folder;
 
@@ -53,7 +51,11 @@ public class FolderAdapter extends RecyclerView.Adapter<FolderAdapter.FolderView
                 for (Category category : categories) {
                     categoryMap.put(category.getId(), category);
                 }
-                notifyDataSetChanged();
+                // Use main thread for UI updates
+                android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+                mainHandler.post(() -> {
+                    notifyDataSetChanged();
+                });
             } catch (Exception e) {
                 e.printStackTrace();
             }

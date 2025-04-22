@@ -8,7 +8,8 @@ import androidx.fragment.app.Fragment;
 import com.example.quizfragments.ui.fragments.notes.NotesFragment;
 import com.example.quizfragments.R;
 import com.example.quizfragments.ui.fragments.flashcard.FlashcardFragment;
-import com.example.quizfragments.ui.fragments.quiz.firstPage;
+import com.example.quizfragments.ui.fragments.home.HomeFragment;
+import com.example.quizfragments.ui.fragments.quiz.getData;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class MainActivity extends AppCompatActivity {
@@ -22,7 +23,9 @@ public class MainActivity extends AppCompatActivity {
         bottomNav.setOnItemSelectedListener(item -> {
             Fragment selectedFragment = null;
             int id = item.getItemId();
-            if (id == R.id.note_dash) {
+            if (id == R.id.home_dash) {
+                selectedFragment = new HomeFragment();
+            } else if (id == R.id.note_dash) {
                 selectedFragment = new NotesFragment();
             } else if (id == R.id.quiz_dash) {
                 selectedFragment = new firstPage();
@@ -38,9 +41,7 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
-
         // Default selection
-        bottomNav.setSelectedItemId(R.id.note_dash);
+        bottomNav.setSelectedItemId(R.id.home_dash);
     }
 }
-
