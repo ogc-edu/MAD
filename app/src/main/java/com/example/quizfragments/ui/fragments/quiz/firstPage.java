@@ -76,6 +76,7 @@ public class getData extends Fragment {
                         Quiz quiz = new Quiz();
                         quiz.title = quizObject.getString("title");
                         quiz.description = quizObject.getString("description");
+                        quiz.questionCount = 10;
 
                         // Use a single thread for the entire database operation
                         new Thread(() -> {
