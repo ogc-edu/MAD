@@ -1,4 +1,4 @@
-package com.example.quizfragments.ui.fragments.quiz;
+package com.example.quizfragments.ui.adapters;
 
 import android.content.Context;
 import android.graphics.Color;
@@ -24,9 +24,16 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.QuizViewHolder
     private List<Quiz> quizzes = new ArrayList<>();
     private final Context context;
     private final String[] COLORS = {"#4C6EF5", "#20C997", "#FD7E14", "#DC3545"}; // Blue, Green, Orange, Red
+    private final OnQuizClickListener listener;
 
-    public QuizAdapter(Context context) {
+    // Interface for quiz click events
+    public interface OnQuizClickListener {
+        void onQuizClick(Quiz quiz);
+    }
+
+    public QuizAdapter(Context context, OnQuizClickListener listener) {
         this.context = context;
+        this.listener = listener;
     }
 
     @NonNull
@@ -63,6 +70,13 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.QuizViewHolder
 
         // Set checkbox based on progress
         holder.completedCheckBox.setChecked(progress == quiz.questionCount);
+
+        // Set click listener on the entire item view
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onQuizClick(quiz);
+            }
+        });
     }
 
     @Override

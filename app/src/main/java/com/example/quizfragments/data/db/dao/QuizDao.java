@@ -31,4 +31,9 @@ public interface QuizDao {
 
     @Query("DELETE FROM quizzes")
     void deleteAllQuizzes();
+
+    @Query("SELECT questionCount FROM quizzes WHERE quizId = :quizId")
+    int getQuizQuestionCount(int quizId);
+    @Query("SELECT COUNT(questionId) FROM questions WHERE quizId = :quizId AND attempted = 1")
+    int getNumberOfAttemptedQuestion(int quizId);
 }
