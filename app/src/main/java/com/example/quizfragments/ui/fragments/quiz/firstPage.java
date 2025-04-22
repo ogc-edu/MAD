@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import java.util.Random;
 
 import androidx.fragment.app.Fragment;
 
@@ -22,20 +23,31 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class getData extends Fragment {
+public class firstPage extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         return inflater.inflate(R.layout.getdata_layout, container, false);
     }
 
     public void onViewCreated(View view, Bundle savedInstanceState) {
+        String topic[] = new String[]{"Biology", "Chemistry", "Mathematics"};
+        Random random = new Random();
         super.onViewCreated(view, savedInstanceState);
+        Button fragmentBtn = view.findViewById(R.id.callFragment);
         Button call_ai = view.findViewById(R.id.call_ai_btn);
         TextView response_container = view.findViewById(R.id.ai_container);
         AppDatabase db = DatabaseClient.getInstance(requireContext()).getAppDatabase();
         Button checkDB = view.findViewById(R.id.storeDB);
+        fragmentBtn.setOnClickListener(v -> {
+            QuizListFragment listFragment = new QuizListFragment();
+
+            getActivity().getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, listFragment) // Replace the container with the new fragment
+                    .addToBackStack(null) // Optional: Adds this transaction to the back stack, so you can navigate back
+                    .commit(); // Commit the transaction
+        });
         checkDB.setOnClickListener(v -> {
-            QuizFragment quizFragment = new QuizFragment();
+            secondPage quizFragment = new secondPage();
 
             // Begin a transaction to replace or add the fragment
             getActivity().getSupportFragmentManager().beginTransaction()
@@ -44,7 +56,7 @@ public class getData extends Fragment {
                     .commit(); // Commit the transaction
         });
         call_ai.setOnClickListener(v -> {
-            String prompt = "Generate 11 multiple-choice quiz questions about Biology.\n" +
+            String prompt = "Generate 11 multiple-choice quiz questions about " + topic[random.nextInt(3)] + "\n" +
                     "Each question must be in JSON format with the following structure:\n" +
                     "The first JSON object in JSON array gives the title and description for quiz, and must be in the format" +
                     "\n" +
@@ -88,6 +100,9 @@ public class getData extends Fragment {
                                     Question question = new Question();
                                     question.quizId = (int) quizId;  // Use the actual quizId from the database
                                     question.questionText = obj.getString("question");
+                                    question.attempted = 0;
+                                    question.userAnswer = -1;
+                                    question.questionNumber = i;
                                     long questionId = db.questionDao().insert(question);
 
                                     //options, 4 options for each question, so for loop runs 4 iterations

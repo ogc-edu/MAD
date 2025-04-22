@@ -19,7 +19,7 @@ import com.example.quizfragments.data.db.entities.Quiz;
 
 import java.util.List;
 
-public class QuizFragment extends Fragment {
+public class secondPage extends Fragment {
 
     private AppDatabase db;
     private TextView showDB;

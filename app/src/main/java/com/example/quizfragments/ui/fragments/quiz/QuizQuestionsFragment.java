@@ -1,6 +1,7 @@
 package com.example.quizfragments.ui.fragments.quiz;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,11 +19,20 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.quizfragments.R;
+import com.example.quizfragments.data.db.AppDatabase;
+import com.example.quizfragments.data.db.DatabaseClient;
+import com.example.quizfragments.data.db.dao.OptionDao;
+import com.example.quizfragments.data.db.dao.QuestionDao;
+import com.example.quizfragments.data.db.dao.QuizDao;
+import com.example.quizfragments.data.db.entities.Option;
+import com.example.quizfragments.data.db.entities.Question;
 import com.example.quizfragments.ui.adapters.QuestionAdapter;
 import com.example.quizfragments.ui.fragments.quiz.QuestionWithStatus;
+import com.example.quizfragments.ui.fragments.quiz.QuizQuestionsFragment;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class QuizQuestionsFragment extends Fragment implements QuestionAdapter.OnQuestionClickListener {
 
@@ -55,7 +65,7 @@ public class QuizQuestionsFragment extends Fragment implements QuestionAdapter.O
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
+        if (getArguments() != null) {       //if no arguments was passed
             quizId = getArguments().getInt(ARG_QUIZ_ID, -1);
             quizTitle = getArguments().getString(ARG_QUIZ_TITLE);
         }
@@ -107,49 +117,53 @@ public class QuizQuestionsFragment extends Fragment implements QuestionAdapter.O
     }
 
     private void loadQuestions() {
-        // In a real app, this would be loaded from database
-        // For demonstration, we'll create sample data similar to the image
-
         questions.clear();
+        //run database
+        new Thread(() -> {
+            AppDatabase db = DatabaseClient.getInstance(requireContext()).getAppDatabase();
+            QuestionDao questionDao = db.questionDao();
+            OptionDao optionDao = db.optionDao();
+            QuizDao quizDao = db.quizDao();
 
-        // Create sample questions to match the screenshot
-        questions.add(new QuestionWithStatus(1, "What is the basic unit of life?", 1, "Cell", "Cell"));
-        questions.add(new QuestionWithStatus(2, "What is the powerhouse of the cell?", 2, "Mitochondria", "Nucleus"));
-        questions.add(new QuestionWithStatus(3, "Which molecule carries genetic information?", 1, "DNA", "DNA"));
-        questions.add(new QuestionWithStatus(4, "What process do plants use to make food?", 1, "Photosynthesis", "Photosynthesis"));
-        questions.add(new QuestionWithStatus(5, "What is the primary function of mitochondria?", 1, "Energy production", "Energy production"));
-        questions.add(new QuestionWithStatus(6, "What is cellular respiration?", 0, "Process of converting glucose to energy", ""));
-        questions.add(new QuestionWithStatus(7, "What are the building blocks of proteins?", 0, "Amino acids", ""));
-        questions.add(new QuestionWithStatus(8, "What is the process of cell division called?", 0, "Mitosis", ""));
-        questions.add(new QuestionWithStatus(9, "What is homeostasis?", 0, "Maintaining stable internal conditions", ""));
-        questions.add(new QuestionWithStatus(10, "What is an organelle?", 0, "Specialized structure within a cell", ""));
+            // Get all questions for the given quiz
+            List<Question> rawQuestions = questionDao.getQuestionByQuizId(quizId);
+            List<QuestionWithStatus> questionWithStatusList = new ArrayList<>();
+            for (Question q : rawQuestions) {
+                // Fetch the correct answer option for this question
+                String correctAnswer = optionDao.getCorrectAnswerForQuestion(q.questionId); // You need this method
 
-        // Update adapter
-        adapter.updateQuestions(questions);
+                //get user answer, if not answered before or reset, answer is -1
+                Option userAnswerOption;
+                if(q.userAnswer != -1){
+                    userAnswerOption = optionDao.getOptionById(q.userAnswer);
+                }else{
+                    userAnswerOption = null;
+                }
+                String userAnswer = userAnswerOption != null ? userAnswerOption.optionText : "Not answered";
 
-        // Update progress
-        updateProgress();
-    }
-
-    private void updateProgress() {
-        // Count attempted questions
-        int attempted = 0;
-        for (QuestionWithStatus question : questions) {
-            if (question.getAttempted() != 0) {
-                attempted++;
+                // Construct your custom object
+                questionWithStatusList.add(new QuestionWithStatus(
+                        q.questionId,
+                        q.questionText,
+                        q.attempted,
+                        correctAnswer,
+                        userAnswer
+                ));
             }
-        }
 
-        // Update progress text and bar
-        int total = questions.size();
-        tvProgress.setText("Progress: " + attempted + "/" + total);
-        progressBar.setMax(total);
-        progressBar.setProgress(attempted);
+            int questionCount = quizDao.getQuizQuestionCount(quizId);
+            int numAttempt = quizDao.getNumberOfAttemptedQuestion(quizId);
 
-        // Update question count
-        tvQuestionCount.setText(total + " Questions");
+            requireActivity().runOnUiThread(() -> {
+                questions = questionWithStatusList;
+                adapter.updateQuestions(questions);
+                tvQuestionCount.setText(questionCount + " Questions");
+                tvProgress.setText("Progress: " + numAttempt + "/" + questionCount);
+            });
+
+        }).start();
     }
-
+    
     private void startQuiz() {
         Toast.makeText(requireContext(), "Starting quiz...", Toast.LENGTH_SHORT).show();
         // In a real app, this would navigate to the first unattempted question
@@ -157,7 +171,10 @@ public class QuizQuestionsFragment extends Fragment implements QuestionAdapter.O
 
     @Override
     public void onQuestionClick(QuestionWithStatus question, int position) {
-        Toast.makeText(requireContext(), "Question " + (position + 1) + " clicked", Toast.LENGTH_SHORT).show();
-        // In a real app, this would navigate to the question detail/answer page
+        QuestionDetailFragment fragment = QuestionDetailFragment.newInstance(quizId, question.getQuestionId());
+        requireActivity().getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .addToBackStack(null)
+                .commit();
     }
 }

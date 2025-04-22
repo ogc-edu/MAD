@@ -20,4 +20,10 @@
     <color name="night_primary_text">#FFFFFF</color>
     <color name="night_secondary_text">#B3FFFFFF</color>
     <color name="night_divider">#616161</color>
+    <color name="colorPrimary">#4F6EF5</color>
+    <color name="colorPrimaryDark">#3F51B5</color>
+    <color name="colorAccent">#4F6EF5</color>
+    <color name="colorCorrect">#4CAF50</color>
+    <color name="colorIncorrect">#F44336</color>
+    <color name="colorNotAttempted">#9E9E9E</color>
 </resources>
