@@ -97,11 +97,11 @@ public class QuestionDetailFragment extends Fragment {
                 // Get the database instance
                 AppDatabase db = DatabaseClient.getInstance(requireContext()).getAppDatabase();
                 QuestionDao questionDao = db.questionDao();
-
-                // Assuming currentNumber is available (current question number)
-                int currentNumber = questionId; // This should be provided from your current question object
-                Question nextQuestion = questionDao.getNextQuestion(quizId, currentNumber); // Query for the next question
-
+                Question question = questionDao.getQuestionById(questionId);
+                Log.d("current number", "is " + questionId);
+                Log.d("quiz number", "is " + quizId);
+                Question nextQuestion = questionDao.getNextQuestion(quizId, question.questionNumber); // Query for the next question
+                Log.d("next number", "is " + nextQuestion);
                 // Check if a next question was found
                 if (nextQuestion != null) {
                     // Run UI update on the main thread
