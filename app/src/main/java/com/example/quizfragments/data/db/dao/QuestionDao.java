@@ -35,7 +35,8 @@ public interface QuestionDao {
     @Query("SELECT attempted FROM questions WHERE questionId = :id")
     int isAttempted(int id);
 
-
+    @Query("SELECT * FROM questions WHERE quizId = :quizId AND questionNumber > :currentNumber ORDER BY questionNumber ASC LIMIT 1")
+    Question getNextQuestion(int quizId, int currentNumber);
 
     @Query("DELETE FROM questions")
     void deleteAllQuestions();
