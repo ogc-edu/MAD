@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <!-- Left colored bar -->
+        <View
+            android:id="@+id/view_color_indicator"
+            android:layout_width="4dp"
+            android:layout_height="match_parent"
+            android:layout_alignParentStart="true"
+            android:layout_alignTop="@id/text_letter"
+            android:layout_alignBottom="@id/text_letter"
+            android:background="#4C6EF5" />
+
+        <!-- Circle with letter -->
+        <TextView
+            android:id="@+id/text_letter"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/circle_background"
+            android:gravity="center"
+            android:text="B"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <!-- Quiz title -->
+        <TextView
+            android:id="@+id/text_quiz_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_toEndOf="@id/text_letter"
+            android:layout_toStartOf="@id/checkbox_completed"
+            android:text="Biology Basics"
+            android:textColor="#000000"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <!-- Quiz details -->
+        <TextView
+            android:id="@+id/text_quiz_details"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/text_quiz_title"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="4dp"
+            android:layout_toEndOf="@id/text_letter"
+            android:text="10 questions • Cells, DNA, Evolution"
+            android:textColor="#707070"
+            android:textSize="14sp" />
+
+        <!-- Progress label -->
+        <TextView
+            android:id="@+id/text_progress_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/text_quiz_details"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_toEndOf="@id/text_letter"
+            android:text="Progress: 5/10"
+            android:textColor="#4C6EF5"
+            android:textSize="14sp" />
+
+        <!-- Progress bar -->
+        <ProgressBar
+            android:id="@+id/progress_bar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:layout_below="@id/text_progress_label"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_toEndOf="@id/text_letter"
+            android:progressDrawable="@drawable/progress_drawable"
+            android:progress="50" />
+
+        <!-- Checkbox -->
+        <CheckBox
+            android:id="@+id/checkbox_completed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:buttonTint="#4C6EF5"
+            android:checked="true" />
+
+    </RelativeLayout>
+</androidx.cardview.widget.CardView>
