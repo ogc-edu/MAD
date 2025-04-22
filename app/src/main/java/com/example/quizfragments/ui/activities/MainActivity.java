@@ -4,7 +4,7 @@ import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
-
+import com.example.quizfragments.ui.fragments.home.HomeFragment;
 import com.example.quizfragments.ui.fragments.notes.NotesFragment;
 import com.example.quizfragments.R;
 import com.example.quizfragments.ui.fragments.flashcard.FlashcardFragment;

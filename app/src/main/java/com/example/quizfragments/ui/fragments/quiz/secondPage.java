@@ -8,9 +8,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.fragment.app.Fragment;
-
+import com.example.quizfragments.data.db.entities.Option;
 import com.example.quizfragments.R;
 import com.example.quizfragments.data.db.AppDatabase;
 import com.example.quizfragments.data.db.DatabaseClient;
