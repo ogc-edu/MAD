@@ -88,6 +88,7 @@ public class secondPage extends Fragment {
             for (Question q : questions) {
                 builder.append("ID: ").append(q.questionId)
                         .append(", Text: ").append(q.questionText)
+                        .append(", Question Num: ").append(q.questionNumber)
                         .append("\n");
             }
             updateDisplay(builder.toString());
