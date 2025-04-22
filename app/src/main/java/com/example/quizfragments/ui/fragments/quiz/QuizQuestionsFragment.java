@@ -39,16 +39,10 @@ public class QuizQuestionsFragment extends Fragment implements QuestionAdapter.O
     private static final String ARG_QUIZ_ID = "quiz_id";
     private static final String ARG_QUIZ_TITLE = "quiz_title";
 
-    private TextView tvQuizTitle;
     private TextView tvQuestionCount;
-    private TextView tvLastAttempt;
     private TextView tvProgress;
-    private ProgressBar progressBar;
-    private RecyclerView rvQuestions;
     private QuestionAdapter adapter;
-    private Button btnStartQuiz;
     private ImageButton btnBack;
-
     private int quizId;
     private String quizTitle;
     private List<QuestionWithStatus> questions = new ArrayList<>();
@@ -88,13 +82,11 @@ public class QuizQuestionsFragment extends Fragment implements QuestionAdapter.O
         }
 
         // Initialize views
-        tvQuizTitle = view.findViewById(R.id.tvQuizTitle);
+        TextView tvQuizTitle = view.findViewById(R.id.tvQuizTitle);
         tvQuestionCount = view.findViewById(R.id.tvQuestionCount);
-        tvLastAttempt = view.findViewById(R.id.tvLastAttempt);
         tvProgress = view.findViewById(R.id.tvProgress);
-        progressBar = view.findViewById(R.id.progressBar);
-        rvQuestions = view.findViewById(R.id.rvQuestions);
-        btnStartQuiz = view.findViewById(R.id.btnStartQuiz);
+        RecyclerView rvQuestions = view.findViewById(R.id.rvQuestions);
+        Button btnStartQuiz = view.findViewById(R.id.btnStartQuiz);
         btnBack = view.findViewById(R.id.btnBack);
 
         // Set quiz title
@@ -159,6 +151,11 @@ public class QuizQuestionsFragment extends Fragment implements QuestionAdapter.O
                 adapter.updateQuestions(questions);
                 tvQuestionCount.setText(questionCount + " Questions");
                 tvProgress.setText("Progress: " + numAttempt + "/" + questionCount);
+
+                // Add these lines to update the ProgressBar
+                ProgressBar progressBar = getView().findViewById(R.id.progressBar);
+                progressBar.setMax(questionCount);
+                progressBar.setProgress(numAttempt);
             });
 
         }).start();

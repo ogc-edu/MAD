@@ -4,10 +4,13 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -16,6 +19,9 @@ import androidx.fragment.app.Fragment;
 import com.example.quizfragments.R;
 import com.example.quizfragments.data.db.AppDatabase;
 import com.example.quizfragments.data.db.DatabaseClient;
+import com.example.quizfragments.data.db.dao.OptionDao;
+import com.example.quizfragments.data.db.dao.QuestionDao;
+import com.example.quizfragments.data.db.dao.QuizDao;
 import com.example.quizfragments.data.db.entities.Question;
 import com.example.quizfragments.data.db.entities.Option;
 
@@ -39,9 +45,9 @@ public class QuestionDetailFragment extends Fragment {
     private List<RadioButton> optionButtons;
     private Question currentQuestion;
     private List<Option> currentOptions;
-    private int totalQuestions;
-    private int currentPosition;
+    Button nextBtn;
     private TextView feedback;
+    private ImageButton backBtn;
 
     public static QuestionDetailFragment newInstance(int quizId, int questionId) {
         QuestionDetailFragment fragment = new QuestionDetailFragment();
@@ -68,8 +74,6 @@ public class QuestionDetailFragment extends Fragment {
 
         tvQuestionNumber = view.findViewById(R.id.tv_question_number);
         tvQuestionText = view.findViewById(R.id.tv_question_text);
-        tvProgress = view.findViewById(R.id.tv_progress);
-        progressBar = view.findViewById(R.id.progress_bar);
         radioGroupOptions = view.findViewById(R.id.radio_group_options);
 
         optionButtons = new ArrayList<>();
@@ -85,8 +89,48 @@ public class QuestionDetailFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         feedback = view.findViewById(R.id.feedback);
+        nextBtn = view.findViewById(R.id.btn_next);
+        nextBtn.setOnClickListener(v -> {
 
-        Log.d("QuestionDetailFragment", "Setting up radio group listener");
+            // Run the database query in a background thread
+            new Thread(() -> {
+                // Get the database instance
+                AppDatabase db = DatabaseClient.getInstance(requireContext()).getAppDatabase();
+                QuestionDao questionDao = db.questionDao();
+
+                // Assuming currentNumber is available (current question number)
+                int currentNumber = questionId; // This should be provided from your current question object
+                Question nextQuestion = questionDao.getNextQuestion(quizId, currentNumber); // Query for the next question
+
+                // Check if a next question was found
+                if (nextQuestion != null) {
+                    // Run UI update on the main thread
+                    getActivity().runOnUiThread(() -> {
+                        // Create a new fragment with the next question's data
+                        QuestionDetailFragment fragment = QuestionDetailFragment.newInstance(quizId, nextQuestion.questionId);
+
+                        // Replace the current fragment with the new one
+                        requireActivity().getSupportFragmentManager().beginTransaction()
+                                .replace(R.id.fragment_container, fragment)
+                                .commit();
+
+                        // Optionally, update UI if necessary
+                        updateUI();
+                    });
+                } else {
+                    // Handle the case where no next question is found, like showing a message or handling the end of quiz
+                    getActivity().runOnUiThread(() -> {
+                        // Show a message or handle the scenario
+                        Toast.makeText(requireContext(), "No more questions available", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            }).start();
+        });
+
+        backBtn = view.findViewById(R.id.backBtn);
+        backBtn.setOnClickListener(v -> {
+            getParentFragmentManager().popBackStack();
+        });
 
         radioGroupOptions.setOnCheckedChangeListener((group, checkedId) -> {
             // More explicit logging
@@ -124,16 +168,8 @@ public class QuestionDetailFragment extends Fragment {
     }
 
     private void updateUI() {
-        if (currentQuestion == null || currentOptions == null || currentOptions.isEmpty()) {
-
-        }
         tvQuestionNumber.setText("Question " + currentQuestion.questionNumber);
         tvQuestionText.setText(currentQuestion.questionText);
-        tvProgress.setText("Progress: " + currentPosition + "/" + totalQuestions);
-        progressBar.setMax(totalQuestions);
-        progressBar.setProgress(currentPosition);
-
-
 
         // Set options text
         for (int i = 0; i < Math.min(optionButtons.size(), currentOptions.size()); i++) {
@@ -146,7 +182,6 @@ public class QuestionDetailFragment extends Fragment {
         }
         // Check the selected option if any
         if (currentQuestion.userAnswer == -1) {
-            Log.d("user ans", "is " + currentQuestion.userAnswer);
             for (int i = 0; i < currentOptions.size(); i++) {
                 if (currentOptions.get(i).optionId == currentQuestion.userAnswer) {
                     optionButtons.get(i).setChecked(true);
@@ -190,4 +225,5 @@ public class QuestionDetailFragment extends Fragment {
         });
         executor.shutdown();
     }
+
 }
