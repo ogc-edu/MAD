@@ -14,7 +14,6 @@ import androidx.fragment.app.Fragment;
 import com.example.quizfragments.R;
 import com.example.quizfragments.data.db.AppDatabase;
 import com.example.quizfragments.data.db.DatabaseClient;
-import com.example.quizfragments.data.db.*;
 import com.example.quizfragments.data.db.entities.Question;
 import com.example.quizfragments.data.db.entities.Quiz;
 

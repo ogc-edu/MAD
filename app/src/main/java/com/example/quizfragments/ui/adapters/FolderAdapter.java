@@ -1,7 +1,6 @@
 package com.example.quizfragments.ui.adapters;
 
 import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,7 +12,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.quizfragments.R;
 import com.example.quizfragments.data.db.AppDatabase;
-import com.example.quizfragments.data.db.DatabaseClient;
 import com.example.quizfragments.data.db.entities.Category;
 import com.example.quizfragments.data.db.entities.Folder;
 

@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -12,9 +11,6 @@ import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 
 import com.example.quizfragments.R;
-import com.example.quizfragments.ui.fragments.notes.NotesFragment;
-import com.example.quizfragments.ui.fragments.flashcard.FlashcardFragment;
-import com.example.quizfragments.ui.fragments.quiz.getData;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class HomeFragment extends Fragment {

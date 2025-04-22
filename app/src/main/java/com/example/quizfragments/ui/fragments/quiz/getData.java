@@ -12,13 +12,11 @@ import androidx.fragment.app.Fragment;
 
 import com.example.quizfragments.R;
 import com.example.quizfragments.data.api.AI;
-import com.example.quizfragments.data.db.dao.QuizDao;
 import com.example.quizfragments.data.db.AppDatabase;
 import com.example.quizfragments.data.db.DatabaseClient;
 import com.example.quizfragments.data.db.entities.Option;
 import com.example.quizfragments.data.db.entities.Question;
 import com.example.quizfragments.data.db.entities.Quiz;
-import com.example.quizfragments.ui.fragments.notes.NotesFragment;
 
 import org.json.JSONArray;
 import org.json.JSONException;
