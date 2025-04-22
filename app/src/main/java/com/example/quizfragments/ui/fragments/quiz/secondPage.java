@@ -75,6 +75,7 @@ public class QuizFragment extends Fragment {
             for (Quiz q : quiz) {
                 builder.append("ID: ").append(q.quizId)
                         .append(", Text: ").append(q.title)
+                        .append(", num question: ").append(q.questionCount)
                         .append("\n");
             }
             updateDisplay(builder.toString());
