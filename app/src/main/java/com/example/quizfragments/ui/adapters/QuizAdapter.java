@@ -13,11 +13,15 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.quizfragments.R;
+import com.example.quizfragments.data.db.AppDatabase;
+import com.example.quizfragments.data.db.DatabaseClient;
+import com.example.quizfragments.data.db.dao.QuizDao;
 import com.example.quizfragments.data.db.entities.Quiz;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.QuizViewHolder> {
 
@@ -25,6 +29,8 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.QuizViewHolder
     private final Context context;
     private final String[] COLORS = {"#4C6EF5", "#20C997", "#FD7E14", "#DC3545"}; // Blue, Green, Orange, Red
     private final OnQuizClickListener listener;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final AppDatabase db;
 
     // Interface for quiz click events
     public interface OnQuizClickListener {
@@ -34,6 +40,7 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.QuizViewHolder
     public QuizAdapter(Context context, OnQuizClickListener listener) {
         this.context = context;
         this.listener = listener;
+        this.db = DatabaseClient.getInstance(context).getAppDatabase();
     }
 
     @NonNull
@@ -48,15 +55,16 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.QuizViewHolder
     public void onBindViewHolder(@NonNull QuizViewHolder holder, int position) {
         Quiz quiz = quizzes.get(position);
 
-        // Generate random progress for demonstration (replace with actual progress tracking)
-        Random random = new Random();
-        int progress = random.nextInt(quiz.questionCount + 1);
-
         holder.titleTextView.setText(quiz.title);
         holder.detailsTextView.setText(quiz.questionCount + " questions • " + quiz.description);
-        holder.progressLabelTextView.setText("Progress: " + progress + "/" + quiz.questionCount);
+
+        // Set initial values while we load from database
+        holder.progressLabelTextView.setText("Loading progress...");
         holder.progressBar.setMax(quiz.questionCount);
-        holder.progressBar.setProgress(progress);
+        holder.progressBar.setProgress(0);
+
+        // Load progress from database
+        updateProgress(holder, quiz);
 
         // Set letter from the first character of title
         String letter = quiz.title.substring(0, 1).toUpperCase();
@@ -68,14 +76,28 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.QuizViewHolder
         holder.letterTextView.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor(color)));
         holder.progressLabelTextView.setTextColor(Color.parseColor(color));
 
-        // Set checkbox based on progress
-        holder.completedCheckBox.setChecked(progress == quiz.questionCount);
-
         // Set click listener on the entire item view
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onQuizClick(quiz);
             }
+        });
+    }
+
+    private void updateProgress(QuizViewHolder holder, Quiz quiz) {
+        executor.execute(() -> {
+            // Get actual progress from database
+            QuizDao quizDao = db.quizDao();
+            int questionCount = quizDao.getQuizQuestionCount(quiz.quizId);
+            int numAttempt = quizDao.getNumberOfAttemptedQuestion(quiz.quizId);
+
+            // Update UI on main thread
+            holder.itemView.post(() -> {
+                holder.progressLabelTextView.setText("Progress: " + numAttempt + "/" + quiz.questionCount);
+                holder.progressBar.setMax(quiz.questionCount);
+                holder.progressBar.setProgress(numAttempt);
+
+            });
         });
     }
 
@@ -89,13 +111,19 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.QuizViewHolder
         notifyDataSetChanged();
     }
 
+    @Override
+    public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView);
+        // Shutdown executor when adapter is no longer needed
+        executor.shutdown();
+    }
+
     static class QuizViewHolder extends RecyclerView.ViewHolder {
         final TextView letterTextView;
         final TextView titleTextView;
         final TextView detailsTextView;
         final TextView progressLabelTextView;
         final ProgressBar progressBar;
-        final CheckBox completedCheckBox;
         final View colorIndicator;
 
         QuizViewHolder(View itemView) {
@@ -105,7 +133,6 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.QuizViewHolder
             detailsTextView = itemView.findViewById(R.id.text_quiz_details);
             progressLabelTextView = itemView.findViewById(R.id.text_progress_label);
             progressBar = itemView.findViewById(R.id.progress_bar);
-            completedCheckBox = itemView.findViewById(R.id.checkbox_completed);
             colorIndicator = itemView.findViewById(R.id.view_color_indicator);
         }
     }
