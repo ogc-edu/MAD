@@ -6,7 +6,7 @@ import androidx.room.Database;
 import androidx.room.RoomDatabase;
 @Database(
         entities = {Quiz.class, Question.class, Option.class, Folder.class, Note.class, Category.class},
-        version = 5,
+        version = 9,
         exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase{

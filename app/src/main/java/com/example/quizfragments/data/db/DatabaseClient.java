@@ -11,8 +11,7 @@ public class DatabaseClient {
         appDatabase = Room.databaseBuilder(
                 context.getApplicationContext(),
                 AppDatabase.class,
-                "database"
-        ).fallbackToDestructiveMigration().build();
+                "database").fallbackToDestructiveMigration().build();
     }
 
     public static synchronized DatabaseClient getInstance(Context context) {

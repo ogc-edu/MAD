@@ -18,6 +18,14 @@
         android:layout_toRightOf="@id/call_ai_btn"
         android:backgroundTint="?attr/colorPrimary"
         android:textColor="@android:color/white"/>
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/callFragment"
+        android:text="fragment"
+        android:layout_toRightOf="@id/storeDB"
+        android:backgroundTint="?attr/colorPrimary"
+        android:textColor="@android:color/white"/>
 
     <ScrollView
         android:layout_width="match_parent"
