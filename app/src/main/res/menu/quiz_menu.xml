@@ -1,0 +1,8 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/menu_new"
+        android:title="New" />
+    <item
+        android:id="@+id/menu_ai"
+        android:title="Generate by AI" />
+</menu>

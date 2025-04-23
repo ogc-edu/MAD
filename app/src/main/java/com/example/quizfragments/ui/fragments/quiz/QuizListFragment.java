@@ -9,6 +9,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.PopupMenu;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -34,6 +37,7 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
     private AppDatabase db;
     private EditText searchEditText;
     private Button btnAll, btnScience, btnHistory;
+    private TextView menuBtn;
 
     @Nullable
     @Override
@@ -48,9 +52,28 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
 
         // Initialize search and filter views
         searchEditText = view.findViewById(R.id.edit_search);
-        btnAll = view.findViewById(R.id.btn_all);
-        btnScience = view.findViewById(R.id.btn_science);
-        btnHistory = view.findViewById(R.id.btn_history);
+        menuBtn = view.findViewById(R.id.menu_btn);
+
+        menuBtn.setOnClickListener(v -> {
+            PopupMenu popup = new PopupMenu(requireContext(), v); // or requireContext() in Fragment
+            popup.getMenuInflater().inflate(R.menu.quiz_menu, popup.getMenu());
+
+            popup.setOnMenuItemClickListener(item -> {
+                if(item.getItemId() == R.id.menu_new){
+                    Toast.makeText(requireContext(), "New clicked", Toast.LENGTH_SHORT).show();
+                }
+                if(item.getItemId() == R.id.menu_ai){
+                        QuizGeneratorFragment quizGeneratorFragment = new QuizGeneratorFragment();
+                        requireActivity().getSupportFragmentManager()
+                                .beginTransaction()
+                                .replace(R.id.fragment_container, quizGeneratorFragment)
+                                .addToBackStack(null)
+                                .commit();
+                }
+                return true;
+            });
+            popup.show();
+        });
 
         setupListeners();
 
@@ -90,21 +113,6 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
             }
         });
 
-        // Category filter buttons
-        btnAll.setOnClickListener(v -> {
-            setActiveButton(btnAll);
-            quizAdapter.setQuizzes(allQuizzes);
-        });
-
-        btnScience.setOnClickListener(v -> {
-            setActiveButton(btnScience);
-            filterByCategory("Science");
-        });
-
-        btnHistory.setOnClickListener(v -> {
-            setActiveButton(btnHistory);
-            filterByCategory("History");
-        });
     }
 
     private void setActiveButton(Button activeButton) {

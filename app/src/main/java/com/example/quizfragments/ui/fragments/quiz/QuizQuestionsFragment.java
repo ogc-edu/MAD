@@ -82,7 +82,7 @@ public class QuizQuestionsFragment extends Fragment implements QuestionAdapter.O
         }
 
         // Initialize views
-        TextView tvQuizTitle = view.findViewById(R.id.tvQuizTitle);
+        TextView tvQuizTitle = view.findViewById(R.id.quizTitle);
         tvQuestionCount = view.findViewById(R.id.tvQuestionCount);
         tvProgress = view.findViewById(R.id.tvProgress);
         RecyclerView rvQuestions = view.findViewById(R.id.rvQuestions);

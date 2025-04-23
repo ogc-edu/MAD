@@ -24,6 +24,7 @@ import com.example.quizfragments.data.db.dao.QuestionDao;
 import com.example.quizfragments.data.db.dao.QuizDao;
 import com.example.quizfragments.data.db.entities.Question;
 import com.example.quizfragments.data.db.entities.Option;
+import com.example.quizfragments.data.db.entities.Quiz;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,9 +44,11 @@ public class QuestionDetailFragment extends Fragment {
     private ProgressBar progressBar;
     private RadioGroup radioGroupOptions;
     private List<RadioButton> optionButtons;
+    private Quiz currentQuiz;
     private Question currentQuestion;
     private List<Option> currentOptions;
     Button nextBtn;
+    TextView quizTitle;
     private TextView feedback;
     private ImageButton backBtn;
 
@@ -71,10 +74,11 @@ public class QuestionDetailFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.question_detail_fragment, container, false);
-
+        quizTitle = view.findViewById(R.id.quiz_title);
         tvQuestionNumber = view.findViewById(R.id.tv_question_number);
         tvQuestionText = view.findViewById(R.id.tv_question_text);
         radioGroupOptions = view.findViewById(R.id.radio_group_options);
+
 
         optionButtons = new ArrayList<>();
         optionButtons.add(view.findViewById(R.id.option1));
@@ -156,6 +160,7 @@ public class QuestionDetailFragment extends Fragment {
         executor.execute(() -> {
             // Load question and options from database
             AppDatabase db = DatabaseClient.getInstance(requireContext()).getAppDatabase();
+            currentQuiz = db.quizDao().getQuizById(quizId);
             currentQuestion = db.questionDao().getQuestionById(questionId);
             currentOptions = db.optionDao().getOptionsByQuestion(questionId);
 
@@ -168,6 +173,7 @@ public class QuestionDetailFragment extends Fragment {
     }
 
     private void updateUI() {
+        quizTitle.setText(currentQuiz.title);
         tvQuestionNumber.setText("Question " + currentQuestion.questionNumber);
         tvQuestionText.setText(currentQuestion.questionText);
 

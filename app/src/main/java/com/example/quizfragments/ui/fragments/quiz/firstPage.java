@@ -56,21 +56,23 @@ public class firstPage extends Fragment {
                     .commit(); // Commit the transaction
         });
         call_ai.setOnClickListener(v -> {
-            String prompt = "Generate 11 multiple-choice quiz questions about " + topic[random.nextInt(3)] + "\n" +
+            String prompt = "Generate 5 multiple-choice quiz questions not including description in the first object about anything\n" +
                     "Each question must be in JSON format with the following structure:\n" +
-                    "The first JSON object in JSON array gives the title and description for quiz, and must be in the format" +
+                    "The first JSON object in JSON array gives the title, description and question count for quiz, and must be in the format" +
                     "\n" +
                     "  \"title\": \"string\",\n" +
                     "  \"description\": \"string\",\n" +
+                    "  \"question_count\": \"int\",\n" +
                     "{\n" +
                     "  \"question\": \"string\",\n" +
                     "  \"options\": [\"string\", \"string\", \"string\", \"string\"],\n" +
                     "  \"answer\": \"int\",\n" +
                     "  \"explanation\": \"string\"\n" +
                     "}\n" +
-                    "Return the entire output as a JSON array with 5 such objects.\n" +
+                    "Return the entire output as a JSON array.\n" +
                     "Do not include any extra text or explanation outside the JSON array.\n" +
-                    "The answer is an int from 0 to 3 corresponding to the correct option index.";
+                    "The answer is an int from 0 to 3 corresponding to the correct option index." +
+                    "Make sure u have 2 questions excluding the metadata\n";
             response_container.setText("Calling AI...");
             AI.modelCall(prompt, new AI.ResponseCallback() {
                 @Override
@@ -86,7 +88,7 @@ public class firstPage extends Fragment {
                         Quiz quiz = new Quiz();
                         quiz.title = quizObject.getString("title");
                         quiz.description = quizObject.getString("description");
-                        quiz.questionCount = 10;
+                        quiz.questionCount = quizObject.getInt("question_count");;
 
                         // Use a single thread for the entire database operation
                         new Thread(() -> {
