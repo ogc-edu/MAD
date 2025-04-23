@@ -93,7 +93,7 @@
         android:layout_marginTop="10dp"
         android:gravity="center"
         android:textAlignment="center"
-        android:text='feedback sini'
+        android:text=""
         />
 
     <RadioGroup
