@@ -56,7 +56,7 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.QuizViewHolder
         Quiz quiz = quizzes.get(position);
 
         holder.titleTextView.setText(quiz.title);
-        holder.detailsTextView.setText(quiz.questionCount + " questions • " + quiz.description);
+        holder.detailsTextView.setText(quiz.questionCount + " questions  \n" + quiz.description);
 
         // Set initial values while we load from database
         holder.progressLabelTextView.setText("Loading progress...");
