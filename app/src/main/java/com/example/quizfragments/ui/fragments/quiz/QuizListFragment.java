@@ -63,7 +63,12 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
                     Toast.makeText(requireContext(), "New clicked", Toast.LENGTH_SHORT).show();
                 }
                 if(item.getItemId() == R.id.menu_ai){
-                    Toast.makeText(requireContext(), "Generate by AI clicked", Toast.LENGTH_SHORT).show();
+                        QuizGeneratorFragment quizGeneratorFragment = new QuizGeneratorFragment();
+                        requireActivity().getSupportFragmentManager()
+                                .beginTransaction()
+                                .replace(R.id.fragment_container, quizGeneratorFragment)
+                                .addToBackStack(null)
+                                .commit();
                 }
                 return true;
             });
