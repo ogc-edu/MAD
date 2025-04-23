@@ -5,4 +5,12 @@
         <item>Medium</item>
         <item>Hard</item>
     </string-array>
+
+    <string name="title_flashcard_decks">Flashcard Decks</string>
+    <string name="text_no_decks">No flashcard decks yet.\nCreate your first deck using the + button.</string>
+    <string name="desc_create_manual">Create Flashcards Manually</string>
+    <string name="desc_create_ai">Create Flashcards with AI</string>
+    <string name="desc_add_flashcard">Add Flashcards</string>
+    <string name="label_create_manual">Create Manually</string>
+    <string name="label_create_ai">Create with AI</string>
 </resources>
