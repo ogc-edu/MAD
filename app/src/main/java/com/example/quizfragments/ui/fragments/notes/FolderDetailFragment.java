@@ -151,7 +151,7 @@ public class FolderDetailFragment extends Fragment implements NoteAdapter.OnNote
         fabAddNote.setOnClickListener(v -> showCreateNoteDialog());
 
         //Set up sorting button
-        sortButton.setOnClickListener(v -> showSortMenu(v));
+        sortButton.setOnClickListener(this::showSortMenu);
     }
 
     private void showSortMenu(View view) {
