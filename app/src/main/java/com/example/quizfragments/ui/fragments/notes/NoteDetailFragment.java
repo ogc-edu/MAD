@@ -14,15 +14,26 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
+//xinai
+import android.widget.PopupMenu;
+import android.widget.LinearLayout;
+import android.app.AlertDialog;
+import android.view.ActionMode;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.constraintlayout.widget.ConstraintSet;
 
 import com.example.quizfragments.R;
 import com.example.quizfragments.data.db.AppDatabase;
 import com.example.quizfragments.data.db.DatabaseClient;
 import com.example.quizfragments.data.db.entities.Note;
+import com.example.quizfragments.data.api.AI;
 
 public class NoteDetailFragment extends Fragment {
 
@@ -95,6 +106,7 @@ public class NoteDetailFragment extends Fragment {
         // Initialize views
         titleEditText = view.findViewById(R.id.note_title_edit);
         contentEditText = view.findViewById(R.id.note_content_edit);
+        setupTextSelectionActionMode();
         saveButton = view.findViewById(R.id.btn_save_note);
         formatStatusText = view.findViewById(R.id.format_status_text);
         lastEditedText = view.findViewById(R.id.last_edited_text);
@@ -158,11 +170,159 @@ public class NoteDetailFragment extends Fragment {
         contentEditText.setOnClickListener(v -> {
             // Check if we're in checklist mode or if there are checkboxes in the text
             if (isChecklistActive || contentEditText.getText().toString().contains("☐") ||
-                contentEditText.getText().toString().contains("☑")) {
+                    contentEditText.getText().toString().contains("☑")) {
                 toggleCheckboxAtCursor();
             }
         });
     }
+
+    private void setupTextSelectionActionMode() {
+        contentEditText.setCustomSelectionActionModeCallback(new ActionMode.Callback() {
+            @Override
+            public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+
+
+                // Add our custom "Ask AI" option
+                MenuItem askAiItem = menu.add(Menu.NONE, R.id.menu_ask_ai, 5, "Ask AI");
+                askAiItem.setIcon(android.R.drawable.ic_menu_help); // Use a default icon or your custom one
+                askAiItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS | MenuItem.SHOW_AS_ACTION_WITH_TEXT);
+
+                return true;
+            }
+
+            @Override
+            public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+                return false;
+            }
+
+            @Override
+            public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+                // Check if the "Ask AI" option was selected
+                if (item.getItemId() == R.id.menu_ask_ai) {
+                    int start = contentEditText.getSelectionStart();
+                    int end = contentEditText.getSelectionEnd();
+
+                    if (start != end) {
+                        String selectedText = contentEditText.getText().toString().substring(start, end);
+                        askAI(selectedText);
+                        mode.finish(); // Close the action mode
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public void onDestroyActionMode(ActionMode mode) {
+                // Not needed
+            }
+        });
+    }
+
+    private void askAI(String selectedText) {
+        // Show loading dialog
+        AlertDialog loadingDialog = new AlertDialog.Builder(requireContext())
+                .setTitle("Asking AI")
+                .setMessage("Processing your request...")
+                .setCancelable(false)
+                .create();
+        loadingDialog.show();
+
+        // Create a prompt for the AI
+        String prompt = "Analyze this text and provide insights: \"" + selectedText + "\"\n" +
+                "Provide a simple brief explanation first"+
+                "Then provide key points that is clear and easy to understand, convert it into short, simple bullet points.";
+
+
+        // Call the AI API
+        AI.modelCall(prompt, new AI.ResponseCallback() {
+            @Override
+            public void onResponse(String result) {
+                loadingDialog.dismiss();
+
+                // Show the AI response in a dialog
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("AI Response")
+                        .setMessage(result)
+                        .setPositiveButton("Close", null)
+                        .show();
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingDialog.dismiss();
+
+                // Show error message
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("Error")
+                        .setMessage("Failed to get AI response: " + error)
+                        .setPositiveButton("OK", null)
+                        .show();
+            }
+        });
+    }
+
+    /**
+     * Shows a dialog for AI-powered note suggestions
+     */
+    private void showNoteSuggestionDialog() {
+        // Get current note content
+        String noteContent = contentEditText.getText().toString();
+
+        // Show dialog to confirm AI suggestion request
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Note Suggestions")
+                .setMessage("Get AI suggestions for improving your note?")
+                .setPositiveButton("Yes", (dialog, which) -> {
+                    // Show loading dialog
+                    AlertDialog loadingDialog = new AlertDialog.Builder(requireContext())
+                            .setTitle("Getting Suggestions")
+                            .setMessage("Analyzing your note...")
+                            .setCancelable(false)
+                            .create();
+                    loadingDialog.show();
+
+                    // Create prompt for note improvement
+                    String prompt = "Please analyze this note and suggest improvements or additions:\n\n" +
+                            noteContent + "\n\n" +
+                            "Provide specific suggestions for what could be added or improved.";
+
+                    // Call AI API
+                    AI.modelCall(prompt, new AI.ResponseCallback() {
+                        @Override
+                        public void onResponse(String result) {
+                            loadingDialog.dismiss();
+
+                            // Show suggestions in a dialog
+                            new AlertDialog.Builder(requireContext())
+                                    .setTitle("AI Suggestions")
+                                    .setMessage(result)
+                                    .setPositiveButton("Close", null)
+                                    .setNeutralButton("Add to Note", (d, w) -> {
+                                        // Add suggestions at the end of the note
+                                        Editable editable = contentEditText.getText();
+                                        String formattedSuggestions = "\n\n--- AI Suggestions ---\n" + result + "\n----------------------\n";
+                                        editable.append(formattedSuggestions);
+                                        Toast.makeText(requireContext(), "Suggestions added to note", Toast.LENGTH_SHORT).show();
+                                    })
+                                    .show();
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            loadingDialog.dismiss();
+                            new AlertDialog.Builder(requireContext())
+                                    .setTitle("Error")
+                                    .setMessage("Failed to get suggestions: " + error)
+                                    .setPositiveButton("OK", null)
+                                    .show();
+                        }
+                    });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
 
     private void loadNote() {
         new Thread(() -> {
@@ -343,14 +503,14 @@ public class NoteDetailFragment extends Fragment {
                 String currentLine = text.substring(lineStart, position);
                 // Check if line is empty or only contains bullet/checkbox
                 isCurrentLineEmpty = currentLine.isEmpty() ||
-                                    currentLine.equals("• ") ||
-                                    currentLine.equals("☐ ") ||
-                                    currentLine.equals("☑ ");
+                        currentLine.equals("• ") ||
+                        currentLine.equals("☐ ") ||
+                        currentLine.equals("☑ ");
 
                 // If the current line is empty and has a bullet/checkbox, remove it and return
                 if (isCurrentLineEmpty && (currentLine.equals("• ") ||
-                                         currentLine.equals("☐ ") ||
-                                         currentLine.equals("☑ "))) {
+                        currentLine.equals("☐ ") ||
+                        currentLine.equals("☑ "))) {
                     // Remove the bullet/checkbox
                     editable.delete(lineStart, lineStart + 2);
                     // Insert a newline
