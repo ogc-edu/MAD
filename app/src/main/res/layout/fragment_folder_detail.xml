@@ -9,16 +9,35 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
+        <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorPrimary"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical"
+        android:baselineAligned="false">
+
         <TextView
             android:id="@+id/folder_title_header"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:background="?attr/colorPrimary"
-            android:padding="16dp"
+            android:layout_weight="1"
             android:text="Folder Name"
             android:textColor="@android:color/white"
             android:textSize="20sp"
             android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/sort_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Sort notes"
+            android:src="@drawable/ic_sort_az"
+            app:tint="@android:color/white"/>
+    </LinearLayout>
+
 
         <TextView
             android:id="@+id/note_swipe_hint"

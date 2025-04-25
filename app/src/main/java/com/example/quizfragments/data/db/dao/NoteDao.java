@@ -6,6 +6,7 @@ import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Update;
 
+import com.example.quizfragments.data.db.entities.Folder;
 import com.example.quizfragments.data.db.entities.Note;
 
 import java.util.List;
@@ -27,6 +28,15 @@ public interface NoteDao {
 
     @Query("SELECT * FROM notes WHERE folderId = :folderId ORDER BY title ASC")
     List<Note> getNotesByFolderId(int folderId);
+
+    @Query("SELECT * FROM notes WHERE folderId = :folderId ORDER BY title COLLATE NOCASE ASC")
+    List<Note> getNotesSortedByTitle(int folderId);
+
+    @Query("SELECT * FROM notes WHERE folderId = :folderId ORDER BY createdAt DESC")
+    List<Note> getNotesSortedByDateCreated(int folderId);
+
+    @Query("SELECT * FROM notes WHERE folderId = :folderId ORDER BY updatedAt DESC")
+    List<Note> getNotesSortedByLastModified(int folderId);
 
     @Query("SELECT * FROM notes WHERE id = :id")
     Note getNoteById(int id);

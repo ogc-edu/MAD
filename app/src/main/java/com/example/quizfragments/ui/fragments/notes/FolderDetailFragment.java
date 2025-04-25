@@ -3,10 +3,15 @@ package com.example.quizfragments.ui.fragments.notes;
 import android.app.AlertDialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ImageButton;
+import android.widget.PopupMenu;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -51,7 +56,33 @@ public class FolderDetailFragment extends Fragment implements NoteAdapter.OnNote
         if (getArguments() != null) {
             folderId = getArguments().getInt(ARG_FOLDER_ID);
         }
+        setHasOptionsMenu(true);
     }
+
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        inflater.inflate(R.menu.menu_sort_options, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int itemId = item.getItemId();
+
+        if (itemId == R.id.sort_by_title) {
+            loadNotesSorted("title");
+            return true;
+        } else if (itemId == R.id.sort_by_date_created) {
+            loadNotesSorted("dateCreated");
+            return true;
+        } else if (itemId == R.id.sort_by_last_modified) {
+            loadNotesSorted("lastModified");
+            return true;
+        } else {
+            return super.onOptionsItemSelected(item);
+        }
+    }
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -71,6 +102,7 @@ public class FolderDetailFragment extends Fragment implements NoteAdapter.OnNote
         emptyNotesView = view.findViewById(R.id.empty_notes_view);
         folderTitleHeader = view.findViewById(R.id.folder_title_header);
         FloatingActionButton fabAddNote = view.findViewById(R.id.fab_add_note);
+        ImageButton sortButton = view.findViewById(R.id.sort_button);
 
         // Setup RecyclerView
         notesRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -113,10 +145,39 @@ public class FolderDetailFragment extends Fragment implements NoteAdapter.OnNote
 
         // Load folder and notes
         loadFolder();
-        loadNotes();
+        loadNotesSorted("lastModified");
 
         // Setup FAB click listener
         fabAddNote.setOnClickListener(v -> showCreateNoteDialog());
+
+        //Set up sorting button
+        sortButton.setOnClickListener(v -> showSortMenu(v));
+    }
+
+    private void showSortMenu(View view) {
+        // Create the PopupMenu
+        PopupMenu popupMenu = new PopupMenu(requireContext(), view);
+        MenuInflater inflater = popupMenu.getMenuInflater();
+        inflater.inflate(R.menu.menu_sort_options, popupMenu.getMenu());
+
+        // Handle menu item click
+        popupMenu.setOnMenuItemClickListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.sort_by_title) {
+                loadNotesSorted("title");
+                return true;
+            } else if (itemId == R.id.sort_by_date_created) {
+                loadNotesSorted("dateCreated");
+                return true;
+            } else if (itemId == R.id.sort_by_last_modified) {
+                loadNotesSorted("lastModified");
+                return true;
+            }
+            return false;
+        });
+
+        // Show the menu
+        popupMenu.show();
     }
 
     private void loadFolder() {
@@ -141,21 +202,34 @@ public class FolderDetailFragment extends Fragment implements NoteAdapter.OnNote
         }).start();
     }
 
-    private void loadNotes() {
+    private void loadNotesSorted(String sortBy) {
         new Thread(() -> {
             try {
-                List<Note> notes = db.noteDao().getNotesByFolderId(folderId);
+                List<Note> notes;
+                switch (sortBy) {
+                    case "title":
+                        notes = db.noteDao().getNotesSortedByTitle(folderId);
+                        break;
+                    case "dateCreated":
+                        notes = db.noteDao().getNotesSortedByDateCreated(folderId);
+                        break;
+                    case "lastModified":
+                        notes = db.noteDao().getNotesSortedByLastModified(folderId);
+                        break;
+                    default:
+                        notes = db.noteDao().getNotesByFolderId(folderId);
+                }
+
+                List<Note> finalNotes = notes;
                 if (isAdded() && getActivity() != null) {
                     requireActivity().runOnUiThread(() -> {
-                        if (isAdded()) {
-                            noteAdapter.setNotes(notes);
-                            if (notes.isEmpty()) {
-                                notesRecyclerView.setVisibility(View.GONE);
-                                emptyNotesView.setVisibility(View.VISIBLE);
-                            } else {
-                                notesRecyclerView.setVisibility(View.VISIBLE);
-                                emptyNotesView.setVisibility(View.GONE);
-                            }
+                        noteAdapter.setNotes(finalNotes);
+                        if (finalNotes.isEmpty()) {
+                            notesRecyclerView.setVisibility(View.GONE);
+                            emptyNotesView.setVisibility(View.VISIBLE);
+                        } else {
+                            notesRecyclerView.setVisibility(View.VISIBLE);
+                            emptyNotesView.setVisibility(View.GONE);
                         }
                     });
                 }
@@ -169,6 +243,7 @@ public class FolderDetailFragment extends Fragment implements NoteAdapter.OnNote
             }
         }).start();
     }
+
 
     private void showCreateNoteDialog() {
         // Navigate to note detail fragment for creating a new note
