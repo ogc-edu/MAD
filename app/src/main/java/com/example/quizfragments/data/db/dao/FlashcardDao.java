@@ -12,7 +12,6 @@ import java.util.List;
 
 @Dao
 public interface FlashcardDao {
-
     @Insert
     void insert(Flashcard flashcard);
 
@@ -22,18 +21,15 @@ public interface FlashcardDao {
     @Delete
     void delete(Flashcard flashcard);
 
-    @Query("SELECT * FROM flashcards ORDER BY position ASC")
-    List<Flashcard> getAll();
+    @Query("SELECT * FROM flashcards WHERE deckId = :deckId ORDER BY position ASC")
+    List<Flashcard> getFlashcardsByDeckId(int deckId);
+
+    @Query("SELECT COUNT(*) FROM flashcards WHERE deckId = :deckId")
+    int getFlashcardCountByDeckId(int deckId);
 
     @Query("SELECT * FROM flashcards WHERE id = :id")
     Flashcard getFlashcardById(int id);
 
-    @Query("SELECT * FROM flashcards WHERE folderId = :folderId ORDER BY position ASC")
-    List<Flashcard> getFlashcardsByFolder(int folderId);
-
-    @Query("SELECT COUNT(*) FROM flashcards WHERE folderId = :folderId")
-    int getFlashcardsCountByFolder(int folderId);
-
-    @Query("DELETE FROM flashcards WHERE folderId = :folderId")
-    void deleteFlashcardsByFolder(int folderId);
+    @Query("DELETE FROM flashcards WHERE deckId = :deckId")
+    void deleteFlashcardsByDeckId(int deckId);
 }

@@ -2,39 +2,33 @@ package com.example.quizfragments.data.db.entities;
 
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
 @Entity(tableName = "flashcards",
-        foreignKeys = {
-                @ForeignKey(
-                        entity = Folder.class,
-                        parentColumns = "id",
-                        childColumns = "folderId",
-                        onDelete = ForeignKey.CASCADE
-                )
-        })
+        foreignKeys = @ForeignKey(
+                entity = FlashcardDeck.class,
+                parentColumns = "id",
+                childColumns = "deckId",
+                onDelete = ForeignKey.CASCADE
+        ),
+        indices = {@Index("deckId")})
 public class Flashcard {
-
     @PrimaryKey(autoGenerate = true)
     private int id;
 
     private String question;
     private String answer;
-    private int folderId;
-    private long createdAt;
-    private long updatedAt;
+    private int deckId;
     private int position;
 
-    public Flashcard(String question, String answer, int folderId) {
+    public Flashcard(String question, String answer, int deckId) {
         this.question = question;
         this.answer = answer;
-        this.folderId = folderId;
-        this.createdAt = System.currentTimeMillis();
-        this.updatedAt = System.currentTimeMillis();
-        this.position = 0;
+        this.deckId = deckId;
     }
 
-    // Getters and Setters
+    // Getters and setters
     public int getId() {
         return id;
     }
@@ -49,7 +43,6 @@ public class Flashcard {
 
     public void setQuestion(String question) {
         this.question = question;
-        this.updatedAt = System.currentTimeMillis();
     }
 
     public String getAnswer() {
@@ -58,31 +51,14 @@ public class Flashcard {
 
     public void setAnswer(String answer) {
         this.answer = answer;
-        this.updatedAt = System.currentTimeMillis();
     }
 
-    public int getFolderId() {
-        return folderId;
+    public int getDeckId() {
+        return deckId;
     }
 
-    public void setFolderId(int folderId) {
-        this.folderId = folderId;
-    }
-
-    public long getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(long createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public long getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(long updatedAt) {
-        this.updatedAt = updatedAt;
+    public void setDeckId(int deckId) {
+        this.deckId = deckId;
     }
 
     public int getPosition() {

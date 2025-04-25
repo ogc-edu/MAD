@@ -10,20 +10,25 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.quizfragments.R;
-import com.example.quizfragments.data.db.entities.Folder;
+import com.example.quizfragments.data.db.entities.FlashcardDeck;
+import com.example.quizfragments.data.db.AppDatabase;
+import com.example.quizfragments.data.db.DatabaseClient;
 
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 public class FlashcardDeckAdapter extends RecyclerView.Adapter<FlashcardDeckAdapter.DeckViewHolder> {
 
-    private final List<Folder> deckList;
+    private final List<FlashcardDeck> deckList;
     private final OnDeckClickListener listener;
+    private final Executor executor = Executors.newSingleThreadExecutor();
 
     public interface OnDeckClickListener {
-        void onDeckClick(Folder deck);
+        void onDeckClick(FlashcardDeck deck);
     }
 
-    public FlashcardDeckAdapter(List<Folder> deckList, OnDeckClickListener listener) {
+    public FlashcardDeckAdapter(List<FlashcardDeck> deckList, OnDeckClickListener listener) {
         this.deckList = deckList;
         this.listener = listener;
     }
@@ -38,13 +43,26 @@ public class FlashcardDeckAdapter extends RecyclerView.Adapter<FlashcardDeckAdap
 
     @Override
     public void onBindViewHolder(@NonNull DeckViewHolder holder, int position) {
-        Folder deck = deckList.get(position);
-
+        FlashcardDeck deck = deckList.get(position);
         holder.tvDeckTitle.setText(deck.getTitle());
-        holder.tvCardCount.setText((position + 5) + " cards");
-        holder.tvDeckDescription.setText("Tap to study");
 
-        // Set a different color for each deck (cycle through a few colors)
+        // Get the card count for each deck from the database
+        executor.execute(() -> {
+            AppDatabase db = DatabaseClient.getInstance(holder.itemView.getContext()).getAppDatabase();
+
+             int cardCount = db.flashcardDao().getFlashcardCountByDeckId(deck.getId());
+
+            holder.itemView.post(() -> {
+                holder.tvCardCount.setText(cardCount + " cards");
+            });
+        });
+
+        holder.tvDeckDescription.setText(deck.getDescription());
+        if (holder.tvDeckDescription.getText().toString().isEmpty()) {
+            holder.tvDeckDescription.setText("Tap to study");
+        }
+
+        // Cycle through colors for the deck icons
         int[] colors = {
                 R.color.deck_color_1,
                 R.color.deck_color_2,
@@ -86,5 +104,12 @@ public class FlashcardDeckAdapter extends RecyclerView.Adapter<FlashcardDeckAdap
             tvDeckDescription = itemView.findViewById(R.id.tv_deck_description);
             tvCardCount = itemView.findViewById(R.id.tv_card_count);
         }
+    }
+
+    // Helper method to update the deck list
+    public void updateDeckList(List<FlashcardDeck> newDeckList) {
+        this.deckList.clear();
+        this.deckList.addAll(newDeckList);
+        notifyDataSetChanged();
     }
 }

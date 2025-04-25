@@ -14,16 +14,21 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.quizfragments.R;
 import com.example.quizfragments.ui.adapters.FlashcardDeckAdapter;
-import com.example.quizfragments.data.db.entities.Folder;
+import com.example.quizfragments.data.db.entities.FlashcardDeck;
+import com.example.quizfragments.data.db.AppDatabase;
+import com.example.quizfragments.data.db.DatabaseClient;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 public class FlashcardFragment extends Fragment {
 
@@ -38,8 +43,9 @@ public class FlashcardFragment extends Fragment {
     private View fabOverlay;
 
     private boolean isFabExpanded = false;
-    private List<Folder> deckList = new ArrayList<>();
+    private List<FlashcardDeck> deckList = new ArrayList<>();
     private FlashcardDeckAdapter adapter;
+    private final Executor executor = Executors.newSingleThreadExecutor();
 
     @Nullable
     @Override
@@ -59,22 +65,35 @@ public class FlashcardFragment extends Fragment {
         setupRecyclerView();
         setupFabListeners();
 
-        loadFlashcardDecks();
-
         return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Load decks from database every time fragment resumes
+        loadFlashcardDecks();
     }
 
     private void setupRecyclerView() {
         adapter = new FlashcardDeckAdapter(deckList, deck -> {
             // Handle deck click - navigate to flashcard tutorial/study
-            // Navigation.findNavController(requireView()).navigate(
-            //     FlashcardFragmentDirections.actionFlashcardFragmentToFlashcardTutorialFragment(deck.getId())
-            // );
-            showToast("Opening " + deck.getTitle() + " deck");
+            navigateToFlashcardStudy(deck.getId());
         });
 
         recyclerFlashcardDecks.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerFlashcardDecks.setAdapter(adapter);
+    }
+
+    private void navigateToFlashcardStudy(int deckId) {
+        // Create instance of FlashcardStudyFragment with the deck ID
+        FlashcardStudyFragment studyFragment = FlashcardStudyFragment.newInstance(deckId);
+
+        // Navigate to study fragment with deck ID
+        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+        transaction.replace(R.id.fragment_container, studyFragment);
+        transaction.addToBackStack(null);
+        transaction.commit();
     }
 
     private void setupFabListeners() {
@@ -88,22 +107,42 @@ public class FlashcardFragment extends Fragment {
 
         fabCreateManual.setOnClickListener(v -> {
             collapseFab();
-            // Navigate to create flashcard manually
-            // Navigation.findNavController(v).navigate(R.id.action_flashcardFragment_to_createFlashcardFragment);
-            showToast("Opening Create Flashcards Manually");
+            navigateToCreateFlashcardFragment();
         });
 
         fabCreateAi.setOnClickListener(v -> {
             collapseFab();
-            // Navigate to AI flashcard generator
-            // Navigation.findNavController(v).navigate(R.id.action_flashcardFragment_to_aiGeneratorFragment);
-            showToast("Opening AI Flashcard Generator");
+            navigateToAiGeneratorFragment();
         });
 
         fabOverlay.setOnClickListener(v -> collapseFab());
     }
 
+    private void navigateToCreateFlashcardFragment() {
+        // Navigate to CreateFlashcardFragment
+        Fragment createFlashcardFragment = new CreateFlashcardFragment();
+
+        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+        transaction.replace(R.id.fragment_container, createFlashcardFragment);
+        transaction.addToBackStack(null);
+        transaction.commit();
+    }
+
+    private void navigateToAiGeneratorFragment() {
+        showToast("AI Flashcard Generator - Coming soon!");
+        // Uncomment when you have created the AiGeneratorFragment
+        /*
+        Fragment aiGeneratorFragment = new AiGeneratorFragment();
+
+        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+        transaction.replace(R.id.fragment_container, aiGeneratorFragment);
+        transaction.addToBackStack(null);
+        transaction.commit();
+        */
+    }
+
     private void expandFab() {
+        // [FAB expansion animation code remains the same]
         isFabExpanded = true;
 
         // Show overlay with animation
@@ -171,6 +210,7 @@ public class FlashcardFragment extends Fragment {
     }
 
     private void collapseFab() {
+        // [FAB collapse animation code remains the same]
         isFabExpanded = false;
 
         fabOverlay.animate()
@@ -258,25 +298,52 @@ public class FlashcardFragment extends Fragment {
     }
 
     private void loadFlashcardDecks() {
-        deckList.clear();
+        // Show loading indicator if needed
+        // loadingIndicator.setVisibility(View.VISIBLE);
 
-        if (deckList.isEmpty()) {
-            // Add some sample decks for visualization purposes
-            for (int i = 1; i <= 5; i++) {
-                Folder deck = new Folder("Sample Deck " + i, "Desc");
-                deck.setId(i);
-                deckList.add(deck);
-            }
-        }
+        executor.execute(() -> {
+            // Get database instance
+            AppDatabase db = DatabaseClient.getInstance(requireContext()).getAppDatabase();
 
-        if (deckList.isEmpty()) {
-            recyclerFlashcardDecks.setVisibility(View.GONE);
-            tvEmptyState.setVisibility(View.VISIBLE);
-        } else {
-            recyclerFlashcardDecks.setVisibility(View.VISIBLE);
-            tvEmptyState.setVisibility(View.GONE);
-            adapter.notifyDataSetChanged();
-        }
+            // Get all flashcard decks from database
+            List<FlashcardDeck> decks = db.flashcardDeckDao().getAllDecks();
+
+            // Update UI on main thread
+            requireActivity().runOnUiThread(() -> {
+                deckList.clear();
+
+                // Add all decks to the list
+                if (decks != null && !decks.isEmpty()) {
+                    deckList.addAll(decks);
+                } else {
+                    // If no decks in database, show sample data for demonstration
+                    boolean showSampleData = false; // Set to false in production
+
+                    if (showSampleData) {
+                        for (int i = 1; i <= 3; i++) {
+                            FlashcardDeck deck = new FlashcardDeck("Sample Deck " + i, "Sample description for deck " + i);
+                            deck.setId(i);
+                            deckList.add(deck);
+                        }
+                    }
+                }
+
+                // Update visibility based on decks available
+                if (deckList.isEmpty()) {
+                    recyclerFlashcardDecks.setVisibility(View.GONE);
+                    tvEmptyState.setVisibility(View.VISIBLE);
+                } else {
+                    recyclerFlashcardDecks.setVisibility(View.VISIBLE);
+                    tvEmptyState.setVisibility(View.GONE);
+                }
+
+                // Notify adapter of data change
+                adapter.notifyDataSetChanged();
+
+                // Hide loading indicator if implemented
+                // loadingIndicator.setVisibility(View.GONE);
+            });
+        });
     }
 
     private void showToast(String message) {
