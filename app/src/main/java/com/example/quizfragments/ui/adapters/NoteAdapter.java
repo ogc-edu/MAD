@@ -21,11 +21,11 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder> {
-
-    private List<Note> notes = new ArrayList<>();
-    private OnNoteClickListener listener;
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd", Locale.getDefault());
-    private String[] colors = {"#FF6B6B", "#4ECDC4", "#FFD166", "#6B5B95", "#88D8B0"};
+    private final List<Note> allNotes = new ArrayList<>();
+    private final List<Note> notes = new ArrayList<>();
+    private final OnNoteClickListener listener;
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd", Locale.getDefault());
+    private final String[] colors = {"#FF6B6B", "#4ECDC4", "#FFD166", "#6B5B95", "#88D8B0"};
 
     public interface OnNoteClickListener {
         void onNoteClick(Note note);
@@ -74,7 +74,8 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
         // Set the last edited date
         long lastEditedTime = currentNote.getUpdatedAt();
         String formattedDate = formatLastEditedDate(lastEditedTime);
-        holder.lastEditedTextView.setText("Last edited: " + formattedDate);
+        holder.lastEditedTextView.setText(
+                holder.itemView.getContext().getString(R.string.last_edited_format, formattedDate));
 
         // Set a color for the category indicator
         holder.categoryIndicator.setBackgroundColor(Color.parseColor(colors[colorIndex]));
@@ -111,8 +112,11 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
     }
 
     public void setNotes(List<Note> notes) {
-        this.notes = notes;
-        notifyDataSetChanged();
+        this.notes.clear();            // Clear the existing list
+        this.notes.addAll(notes);      // Add all new notes
+        this.allNotes.clear();         // Clear the backup list
+        this.allNotes.addAll(notes);   // Add all new notes to backup
+        notifyDataSetChanged();        // Notify adapter of changes
     }
 
     public void deleteNote(int position) {
@@ -129,13 +133,32 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
         return null;
     }
 
+    public void filter(String text) {
+        notes.clear();
+        if (text.isEmpty()) {
+            notes.addAll(allNotes);
+        } else {
+            text = text.toLowerCase();
+            for (Note note : allNotes) {
+                // Handle potential null values
+                String title = note.getTitle() != null ? note.getTitle().toLowerCase() : "";
+                String content = note.getContent() != null ? note.getContent().toLowerCase() : "";
+
+                if (title.contains(text) || content.contains(text)) {
+                    notes.add(note);
+                }
+            }
+        }
+        notifyDataSetChanged();
+    }
+
     class NoteViewHolder extends RecyclerView.ViewHolder {
-        private TextView titleTextView;
-        private TextView contentPreviewTextView;
-        private TextView lastEditedTextView;
-        private TextView avatarTextView;
-        private View categoryIndicator;
-        private ImageButton arrowButton;
+        private final TextView titleTextView;
+        private final TextView contentPreviewTextView;
+        private final TextView lastEditedTextView;
+        private final TextView avatarTextView;
+        private final View categoryIndicator;
+        private final ImageButton arrowButton;
 
         public NoteViewHolder(@NonNull View itemView) {
             super(itemView);

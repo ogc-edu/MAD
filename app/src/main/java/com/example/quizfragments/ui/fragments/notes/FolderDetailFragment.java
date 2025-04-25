@@ -3,15 +3,17 @@ package com.example.quizfragments.ui.fragments.notes;
 import android.app.AlertDialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ImageButton;
 import android.widget.PopupMenu;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.widget.EditText;
+import java.util.ArrayList;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -41,6 +43,9 @@ public class FolderDetailFragment extends Fragment implements NoteAdapter.OnNote
     private TextView folderTitleHeader;
     private NoteAdapter noteAdapter;
     private AppDatabase db;
+    private EditText searchBox;
+    private List<Note> allNotes = new ArrayList<>();
+
 
     public static FolderDetailFragment newInstance(int folderId) {
         FolderDetailFragment fragment = new FolderDetailFragment();
@@ -56,33 +61,7 @@ public class FolderDetailFragment extends Fragment implements NoteAdapter.OnNote
         if (getArguments() != null) {
             folderId = getArguments().getInt(ARG_FOLDER_ID);
         }
-        setHasOptionsMenu(true);
     }
-
-    @Override
-    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        inflater.inflate(R.menu.menu_sort_options, menu);
-        super.onCreateOptionsMenu(menu, inflater);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        int itemId = item.getItemId();
-
-        if (itemId == R.id.sort_by_title) {
-            loadNotesSorted("title");
-            return true;
-        } else if (itemId == R.id.sort_by_date_created) {
-            loadNotesSorted("dateCreated");
-            return true;
-        } else if (itemId == R.id.sort_by_last_modified) {
-            loadNotesSorted("lastModified");
-            return true;
-        } else {
-            return super.onOptionsItemSelected(item);
-        }
-    }
-
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -103,6 +82,8 @@ public class FolderDetailFragment extends Fragment implements NoteAdapter.OnNote
         folderTitleHeader = view.findViewById(R.id.folder_title_header);
         FloatingActionButton fabAddNote = view.findViewById(R.id.fab_add_note);
         ImageButton sortButton = view.findViewById(R.id.sort_button);
+        ImageButton searchButton = view.findViewById(R.id.search_button);
+        searchBox = view.findViewById(R.id.search_box);
 
         // Setup RecyclerView
         notesRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -152,6 +133,43 @@ public class FolderDetailFragment extends Fragment implements NoteAdapter.OnNote
 
         //Set up sorting button
         sortButton.setOnClickListener(this::showSortMenu);
+
+        // Toggle search box visibility when search button is clicked
+        searchButton.setOnClickListener(v -> {
+            if (searchBox.getVisibility() == View.GONE) {
+                searchBox.setVisibility(View.VISIBLE);
+                searchBox.requestFocus();
+            } else {
+                searchBox.setVisibility(View.GONE);
+                searchBox.setText(""); // Clear search when hiding
+                noteAdapter.filter(""); // Reset filter
+            }
+        });
+
+        // Perform filtering when user types
+        searchBox.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                noteAdapter.filter(s.toString());
+                updateEmptyViewVisibility();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+    }
+
+    private void updateEmptyViewVisibility() {
+        if (noteAdapter.getItemCount() == 0) {
+            notesRecyclerView.setVisibility(View.GONE);
+            emptyNotesView.setVisibility(View.VISIBLE);
+        } else {
+            notesRecyclerView.setVisibility(View.VISIBLE);
+            emptyNotesView.setVisibility(View.GONE);
+        }
     }
 
     private void showSortMenu(View view) {

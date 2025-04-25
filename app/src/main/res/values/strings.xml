@@ -4,6 +4,7 @@
     <string name="sort_by_title">Sort by Title</string>
     <string name="sort_by_date_created">Sort by Date Created</string>
     <string name="sort_by_last_modified">Sort by Last Modified</string>
+    <string name="last_edited_format">Last edited: %1$s</string>
     <string-array name="difficulty_levels">
         <item>Easy</item>
         <item>Medium</item>
