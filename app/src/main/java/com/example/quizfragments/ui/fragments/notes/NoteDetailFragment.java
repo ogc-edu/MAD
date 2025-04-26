@@ -1,5 +1,6 @@
 package com.example.quizfragments.ui.fragments.notes;
 
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,6 +35,7 @@ import com.example.quizfragments.data.db.AppDatabase;
 import com.example.quizfragments.data.db.DatabaseClient;
 import com.example.quizfragments.data.db.entities.Note;
 import com.example.quizfragments.data.api.AI;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class NoteDetailFragment extends Fragment {
 
@@ -106,12 +108,14 @@ public class NoteDetailFragment extends Fragment {
         // Initialize views
         titleEditText = view.findViewById(R.id.note_title_edit);
         contentEditText = view.findViewById(R.id.note_content_edit);
-        setupTextSelectionActionMode();
+
         saveButton = view.findViewById(R.id.btn_save_note);
         formatStatusText = view.findViewById(R.id.format_status_text);
         lastEditedText = view.findViewById(R.id.last_edited_text);
         categoryTitleText = view.findViewById(R.id.note_category_title);
         backButton = view.findViewById(R.id.btn_back);
+        setupTextSelectionActionMode();
+        setupKeyboardVisibilityListener(view);
 
         // Initialize formatting toggle buttons
         toggleBold = view.findViewById(R.id.toggle_bold);
@@ -172,6 +176,28 @@ public class NoteDetailFragment extends Fragment {
             if (isChecklistActive || contentEditText.getText().toString().contains("☐") ||
                     contentEditText.getText().toString().contains("☑")) {
                 toggleCheckboxAtCursor();
+            }
+        });
+    }
+
+    private void setupKeyboardVisibilityListener(View rootView) {
+        rootView.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
+            if (!isAdded()) {
+                // Fragment not attached anymore, skip
+                return;
+            }
+
+            Rect r = new Rect();
+            rootView.getWindowVisibleDisplayFrame(r);
+            int screenHeight = rootView.getRootView().getHeight();
+            int keypadHeight = screenHeight - r.bottom;
+
+            BottomNavigationView bottomNav = requireActivity().findViewById(R.id.bottom_navigation);
+
+            boolean isKeyboardShowing = keypadHeight > screenHeight * 0.15;
+
+            if (bottomNav != null) {
+                bottomNav.setVisibility(isKeyboardShowing ? View.GONE : View.VISIBLE);
             }
         });
     }
