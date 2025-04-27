@@ -15,7 +15,7 @@ import com.example.quizfragments.R;
 
 public class SplashActivity extends AppCompatActivity {
 
-    private static final long SPLASH_DISPLAY_LENGTH = 2000; // 2 seconds
+    private static final long SPLASH_DISPLAY_LENGTH = 2500; 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

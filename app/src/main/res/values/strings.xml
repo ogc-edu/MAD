@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">QuizFragments</string>
+    <string name="app_name">StudyHive</string>
     <string name="menu_ask_ai">Ask AI</string>
     <string name="sort_by_title">Sort by Title</string>
     <string name="sort_by_date_created">Sort by Date Created</string>
