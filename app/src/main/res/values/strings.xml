@@ -7,6 +7,7 @@
     <string name="last_edited_format">Last edited: %1$s</string>
     <string name="app_tagline">Your Personal Study Assistant</string>
     <string name="app_logo_description">Study Buddy App Logo</string>
+    <string name="summary_content_description">AI generated summary of your note</string>
     <string-array name="difficulty_levels">
         <item>Easy</item>
         <item>Medium</item>

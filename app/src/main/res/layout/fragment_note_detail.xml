@@ -6,7 +6,7 @@
     android:orientation="vertical"
     android:background="#FFFFFF">
 
-    <!-- Top toolbar with back button and title -->
+    <!-- Top toolbar with back button, title, and action buttons -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="56dp"
@@ -33,10 +33,39 @@
             android:text="Biology Notes"
             android:textColor="#FFFFFF"
             android:textSize="20sp"
+            android:textStyle="bold"
             android:layout_marginStart="8dp" />
+
+        <!-- Summarize Button -->
+        <Button
+            android:id="@+id/btn_summarize"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:minWidth="64dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:text="Summarize"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/summarize_button_background"
+            android:layout_marginEnd="8dp"
+            />
+
+        <!-- Save Button -->
+        <Button
+            android:id="@+id/btn_save_note"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:minWidth="64dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:text="Save"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/save_button_background" />
     </LinearLayout>
 
-    <!-- Scrollable formatting buttons (moved here) -->
+    <!-- Scrollable formatting buttons -->
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -177,45 +206,26 @@
         android:layout_marginBottom="4dp"/>
 
     <!-- Note content -->
+
+    <!-- Floating AI button -->
     <EditText
         android:id="@+id/note_content_edit"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
+        android:background="@null"
+        android:bufferType="editable"
         android:gravity="top"
         android:hint="Start typing your note here..."
+        android:importantForAutofill="no"
         android:inputType="textMultiLine"
-        android:background="@null"
         android:paddingStart="16dp"
-        android:paddingEnd="16dp"
         android:paddingTop="8dp"
+        android:paddingEnd="16dp"
         android:paddingBottom="8dp"
         android:textIsSelectable="true"
-        android:bufferType="editable"
-        android:textSize="16sp"
-        android:importantForAutofill="no"/>
+        android:textSize="16sp" />
 
-    <!-- Bottom action bar with formatting toolbar and save button -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:background="#F5F5F5"
-        android:gravity="center_vertical"
-        android:padding="8dp">
-
-        <!-- Save button aligned to the right -->
-        <Button
-            android:id="@+id/btn_save_note"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Save"
-            android:textColor="#FFFFFF"
-            android:background="@drawable/save_button_background"
-            android:layout_marginStart="8dp" />
-    </LinearLayout>
-
-    <!-- Floating AI button -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_ai"
         android:layout_width="wrap_content"
