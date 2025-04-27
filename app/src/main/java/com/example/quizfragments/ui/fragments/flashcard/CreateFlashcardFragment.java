@@ -41,18 +41,17 @@ public class CreateFlashcardFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_create_flashcard, container, false);
 
-        // Initialize views
+        view.findViewById(R.id.btnBack).setOnClickListener(v -> navigateBack());
+
         etDeckName = view.findViewById(R.id.et_deck_name);
         flashcardsContainer = view.findViewById(R.id.flashcards_container);
         Button btnAddCard = view.findViewById(R.id.btn_add_card);
         Button btnSaveDeck = view.findViewById(R.id.btn_save_deck);
         scrollView = view.findViewById(R.id.scroll_view);
 
-        // Set up click listeners
         btnAddCard.setOnClickListener(v -> addNewCard());
         btnSaveDeck.setOnClickListener(v -> saveDeck());
 
-        // Add initial card
         addNewCard();
 
         return view;
@@ -64,7 +63,6 @@ public class CreateFlashcardFragment extends Fragment {
 
         ImageButton btnRemove = cardView.findViewById(R.id.btn_remove_card);
         btnRemove.setOnClickListener(v -> {
-            // Only allow removing if there's more than one card
             if (cardViews.size() > 1) {
                 flashcardsContainer.removeView(cardView);
                 cardViews.remove(new CardView(cardView));
@@ -186,12 +184,15 @@ public class CreateFlashcardFragment extends Fragment {
         }
     }
 
-    // Helper class to keep track of card views
     private static class CardView {
         View view;
 
         CardView(View view) {
             this.view = view;
         }
+    }
+
+    private void navigateBack() {
+        requireActivity().getSupportFragmentManager().popBackStack();
     }
 }
