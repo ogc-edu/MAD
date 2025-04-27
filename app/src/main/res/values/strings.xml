@@ -20,4 +20,16 @@
     <string name="desc_add_flashcard">Add Flashcards</string>
     <string name="label_create_manual">Create Manually</string>
     <string name="label_create_ai">Create with AI</string>
+    <string name="pagination">1/10</string>
+    <string name="deck_title">Deck Title</string>
+    <string name="question">QUESTION</string>
+    <string name="question_text_will_appear_here">Question text will appear here</string>
+    <string name="answer">ANSWER</string>
+    <string name="answer_text_will_appear_here">Answer text will appear here</string>
+    <string name="back" />
+    <string name="create_flashcards">Create Flashcards</string>
+    <string name="deck_name">Deck Name</string>
+    <string name="add_flashcards">Add Flashcards</string>
+    <string name="add_another_card">+ Add Another Card</string>
+    <string name="save_deck">Save Deck</string>
 </resources>
