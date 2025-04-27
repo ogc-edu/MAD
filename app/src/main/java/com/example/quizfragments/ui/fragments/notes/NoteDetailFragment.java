@@ -1,6 +1,5 @@
 package com.example.quizfragments.ui.fragments.notes;
 
-import android.graphics.Rect;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,33 +8,28 @@ import android.view.KeyEvent;
 import android.text.Html;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
-//xinai
-import android.widget.PopupMenu;
-import android.widget.LinearLayout;
+
 import android.app.AlertDialog;
 import android.view.ActionMode;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.constraintlayout.widget.ConstraintSet;
 
 import com.example.quizfragments.R;
 import com.example.quizfragments.data.db.AppDatabase;
 import com.example.quizfragments.data.db.DatabaseClient;
 import com.example.quizfragments.data.db.entities.Note;
 import com.example.quizfragments.data.api.AI;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class NoteDetailFragment extends Fragment {
 
@@ -50,6 +44,7 @@ public class NoteDetailFragment extends Fragment {
     private EditText titleEditText;
     private EditText contentEditText;
     private Button saveButton;
+    private Button summarizeButton;
     private TextView formatStatusText;
     private TextView lastEditedText;
     private TextView categoryTitleText;
@@ -110,6 +105,7 @@ public class NoteDetailFragment extends Fragment {
         contentEditText = view.findViewById(R.id.note_content_edit);
 
         saveButton = view.findViewById(R.id.btn_save_note);
+        summarizeButton = view.findViewById(R.id.btn_summarize);
         formatStatusText = view.findViewById(R.id.format_status_text);
         lastEditedText = view.findViewById(R.id.last_edited_text);
         categoryTitleText = view.findViewById(R.id.note_category_title);
@@ -156,6 +152,9 @@ public class NoteDetailFragment extends Fragment {
         // Setup save button click listener
         saveButton.setOnClickListener(v -> saveNote());
 
+        // Setup summarize button click listener
+        summarizeButton.setOnClickListener(v -> summarizeNote());
+
         // Setup key listener for direct key events
         contentEditText.setOnKeyListener((v, keyCode, event) -> {
             // Check if Enter key was pressed
@@ -175,6 +174,168 @@ public class NoteDetailFragment extends Fragment {
             if (isChecklistActive || contentEditText.getText().toString().contains("☐") ||
                     contentEditText.getText().toString().contains("☑")) {
                 toggleCheckboxAtCursor();
+            }
+        });
+    }
+
+    //Summarizes the current note content using AI
+    private void summarizeNote() {
+        String noteContent = contentEditText.getText().toString().trim();
+        String noteTitle = titleEditText.getText().toString().trim();
+
+        if (noteContent.isEmpty()) {
+            Toast.makeText(requireContext(), "Note is empty. Nothing to summarize.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Show loading dialog
+        AlertDialog loadingDialog = new AlertDialog.Builder(requireContext())
+                .setTitle("Summarizing Note")
+                .setMessage("Processing your note content...")
+                .setCancelable(false)
+                .create();
+        loadingDialog.show();
+
+        // Create a prompt for the AI
+        String prompt = "Summarize the following note clearly and concisely:\n\n" + noteContent + "\n\n" +
+                "Instructions:\n" +
+                "1. Write a short paragraph summary first (no title needed).\n" +
+                "2. Then, break down the key points into simple bullet points.\n" +
+                "3. Format:\n" +
+                "- Show the title (if available) as normal text.\n" +
+                "- Use '-' for bullet points.\n" +
+                "- Keep bullet points short, clear, and easy to understand.\n" +
+                "- Add one empty line between different sections if needed.\n\n" +
+                "Example:\n" +
+                "Cell Membrane\n" +
+                "- Controls entry and exit of substances\n" +
+                "- Made of lipid bilayer\n" +
+                "- Contains embedded proteins";
+
+
+        // Call the AI API
+        AI.modelCall(prompt, new AI.ResponseCallback() {
+            @Override
+            public void onResponse(String result) {
+                loadingDialog.dismiss();
+                showSummaryResultDialog(result);
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingDialog.dismiss();
+
+                // Show error message
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("Error")
+                        .setMessage("Failed to summarize note: " + error)
+                        .setPositiveButton("OK", null)
+                        .show();
+            }
+        });
+    }
+
+    //Shows the summary result in a dialog with options
+    private void showSummaryResultDialog(String summaryResult) {
+        // Inflate the custom layout
+        View customView = getLayoutInflater().inflate(R.layout.dialog_summary_result, null);
+        TextView summaryTextView = customView.findViewById(R.id.summary_text);
+        TextView summarizeAgainOption = customView.findViewById(R.id.btn_copy);
+        TextView insertOption = customView.findViewById(R.id.btn_insert);
+        TextView closeOption = customView.findViewById(R.id.btn_close);
+
+        summarizeAgainOption.setText("Summarize Again");
+
+        // Set the summary text
+        summaryTextView.setText(summaryResult);
+
+        // Create the dialog with no buttons (we'll use our custom text options)
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setTitle("Note Summary")
+                .setView(customView)
+                .setCancelable(false) // Prevent dismissal except via our options
+                .create();
+
+        // Set the dialog to adjust to screen size
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+
+        dialog.show();
+
+        // Setup option click listeners
+        summarizeAgainOption.setOnClickListener(v -> {
+            dialog.dismiss();
+
+            // Call summarizeNote() again for a different summary
+            summarizeNoteWithAlternativePrompt();
+        });
+
+        insertOption.setOnClickListener(v -> {
+            Editable editable = contentEditText.getText();
+            String formattedSummary = "\n\n--- AI Summary ---\n" + summaryResult + "\n-------------------\n";
+            editable.append(formattedSummary);
+            Toast.makeText(requireContext(), "Summary added to note", Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+        });
+
+        closeOption.setOnClickListener(v -> dialog.dismiss());
+    }
+
+    // New method to summarize note with a slightly different prompt for variety
+    private void summarizeNoteWithAlternativePrompt() {
+        String noteContent = contentEditText.getText().toString().trim();
+        String noteTitle = titleEditText.getText().toString().trim();
+
+        if (noteContent.isEmpty()) {
+            Toast.makeText(requireContext(), "Note is empty. Nothing to summarize.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Show loading dialog
+        AlertDialog loadingDialog = new AlertDialog.Builder(requireContext())
+                .setTitle("Summarizing Note")
+                .setMessage("Creating an alternative summary...")
+                .setCancelable(false)
+                .create();
+        loadingDialog.show();
+
+        // Alternative prompt for a different perspective
+        String prompt = "Please provide a different perspective summary for the following " +
+                (noteTitle.isEmpty() ? "note" : "note titled '" + noteTitle + "'") + ":\n\n" + noteContent + "\n\n" +
+                "Instructions:\n" +
+                "1. Create a concise summary focusing on different aspects (maximum 1–2 short paragraphs).\n" +
+                "2. Then, list the key ideas in simple bullet points.\n" +
+                "3. Format:\n" +
+                "- Use '-' for bullet points.\n" +
+                "- Keep points short and easy to understand.\n" +
+                "- Insert one empty line between different titles or sections if needed.\n\n" +
+                "Example:\n" +
+                "Nucleus\n" +
+                "- Controls cell activities\n" +
+                "- Contains genetic material (DNA)\n" +
+                "- Surrounded by nuclear envelope";
+
+
+        // Call the AI API
+        AI.modelCall(prompt, new AI.ResponseCallback() {
+            @Override
+            public void onResponse(String result) {
+                loadingDialog.dismiss();
+                showSummaryResultDialog(result);  // Show new summary
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingDialog.dismiss();
+
+                // Show error message
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("Error")
+                        .setMessage("Failed to create alternative summary: " + error)
+                        .setPositiveButton("OK", null)
+                        .show();
             }
         });
     }
@@ -233,8 +394,24 @@ public class NoteDetailFragment extends Fragment {
 
         // Create a prompt for the AI
         String prompt = "Analyze this text and provide insights: \"" + selectedText + "\"\n" +
-                "Provide a simple brief explanation first"+
-                "Then provide key points that is clear and easy to understand, convert it into short, simple bullet points.";
+                "Instructions:\n" +
+                "1. First, provide a short and simple explanation paragraph for the topic.\n" +
+                "2. Then, break down the important details into bullet points.\n" +
+                "3. Format:\n" +
+                "- Show the title normally (no bold, just plain text).\n" +
+                "- List bullet points under each title.\n" +
+                "- No extra empty lines between bullet points.\n" +
+                "- Add ONE empty line between different titles to separate them.\n" +
+                "- Keep everything easy to read and clean.\n\n" +
+                "Example:\n" +
+                "Cell Membrane\n" +
+                "- Controls entry and exit of substances\n" +
+                "- Made of lipid bilayer\n" +
+                "- Contains embedded proteins\n\n" +
+                "Nucleus\n" +
+                "- Controls cell activities\n" +
+                "- Contains DNA\n" +
+                "- Surrounded by nuclear envelope";
 
 
         // Call the AI API
@@ -265,9 +442,7 @@ public class NoteDetailFragment extends Fragment {
         });
     }
 
-    /**
-     * Shows a dialog for AI-powered note suggestions
-     */
+    //Shows a dialog for AI-powered note suggestions
     private void showNoteSuggestionDialog() {
         // Get current note content
         String noteContent = contentEditText.getText().toString();
@@ -325,7 +500,6 @@ public class NoteDetailFragment extends Fragment {
                 .setNegativeButton("Cancel", null)
                 .show();
     }
-
 
     private void loadNote() {
         new Thread(() -> {
