@@ -60,16 +60,6 @@
             android:inputType="text"
             android:drawableStart="@android:drawable/ic_menu_search"/>
 
-        <!--<EditText
-            android:id="@+id/search_box"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Search notes..."
-            android:padding="12dp"
-            android:visibility="gone"
-            android:inputType="text"
-            android:background="@android:drawable/editbox_background" />
--->
         <TextView
             android:id="@+id/note_swipe_hint"
             android:layout_width="match_parent"

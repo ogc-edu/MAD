@@ -22,8 +22,8 @@
             android:layout_height="48dp"
             android:src="@android:drawable/ic_menu_revert"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:tint="#FFFFFF"
-            android:contentDescription="Back" />
+            android:contentDescription="Back"
+            app:tint="#FFFFFF" />
 
         <TextView
             android:id="@+id/note_category_title"
@@ -35,6 +35,93 @@
             android:textSize="20sp"
             android:layout_marginStart="8dp" />
     </LinearLayout>
+
+    <!-- Scrollable formatting buttons (moved here) -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:background="#F5F5F5"
+        android:padding="8dp">
+
+        <LinearLayout
+            android:id="@+id/format_toggle_container"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- Bold (B) button -->
+            <ToggleButton
+                android:id="@+id/toggle_bold"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:textOn="B"
+                android:textOff="B"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:background="@drawable/toggle_button_background"
+                android:textColor="@color/toggle_text_color"
+                android:layout_marginEnd="8dp" />
+
+            <!-- Italic (I) button -->
+            <ToggleButton
+                android:id="@+id/toggle_italic"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:textOn="I"
+                android:textOff="I"
+                android:textStyle="italic"
+                android:textSize="16sp"
+                android:background="@drawable/toggle_button_background"
+                android:textColor="@color/toggle_text_color"
+                android:layout_marginEnd="8dp" />
+
+            <!-- Underline (U) button -->
+            <ToggleButton
+                android:id="@+id/toggle_underline"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:textOn="U"
+                android:textOff="U"
+                android:textSize="16sp"
+                android:background="@drawable/toggle_button_background"
+                android:textColor="@color/toggle_text_color"
+                android:layout_marginEnd="8dp" />
+
+            <!-- Divider -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="24dp"
+                android:background="#DDDDDD"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="8dp" />
+
+            <!-- Bullet list button -->
+            <ToggleButton
+                android:id="@+id/toggle_bullet"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:textOn="•"
+                android:textOff="•"
+                android:textSize="20sp"
+                android:background="@drawable/toggle_button_background"
+                android:textColor="@color/toggle_text_color"
+                android:layout_marginEnd="8dp" />
+
+            <!-- Checklist button -->
+            <ToggleButton
+                android:id="@+id/toggle_checklist"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:textOn="✓"
+                android:textOff="✓"
+                android:textSize="16sp"
+                android:background="@drawable/toggle_button_background"
+                android:textColor="@color/toggle_text_color"
+                android:layout_marginEnd="8dp" />
+        </LinearLayout>
+    </HorizontalScrollView>
 
     <!-- Last edited info -->
     <TextView
@@ -116,92 +203,6 @@
         android:background="#F5F5F5"
         android:gravity="center_vertical"
         android:padding="8dp">
-
-        <!-- Scrollable formatting buttons -->
-        <HorizontalScrollView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:scrollbars="none">
-
-            <LinearLayout
-                android:id="@+id/format_toggle_container"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <!-- Bold (B) button -->
-                <ToggleButton
-                    android:id="@+id/toggle_bold"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:textOn="B"
-                    android:textOff="B"
-                    android:textStyle="bold"
-                    android:textSize="16sp"
-                    android:background="@drawable/toggle_button_background"
-                    android:textColor="@color/toggle_text_color"
-                    android:layout_marginEnd="8dp" />
-
-                <!-- Italic (I) button -->
-                <ToggleButton
-                    android:id="@+id/toggle_italic"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:textOn="I"
-                    android:textOff="I"
-                    android:textStyle="italic"
-                    android:textSize="16sp"
-                    android:background="@drawable/toggle_button_background"
-                    android:textColor="@color/toggle_text_color"
-                    android:layout_marginEnd="8dp" />
-
-                <!-- Underline (U) button -->
-                <ToggleButton
-                    android:id="@+id/toggle_underline"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:textOn="U"
-                    android:textOff="U"
-                    android:textSize="16sp"
-                    android:background="@drawable/toggle_button_background"
-                    android:textColor="@color/toggle_text_color"
-                    android:layout_marginEnd="8dp" />
-
-                <!-- Divider -->
-                <View
-                    android:layout_width="1dp"
-                    android:layout_height="24dp"
-                    android:background="#DDDDDD"
-                    android:layout_marginStart="4dp"
-                    android:layout_marginEnd="8dp" />
-
-                <!-- Bullet list button -->
-                <ToggleButton
-                    android:id="@+id/toggle_bullet"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:textOn="•"
-                    android:textOff="•"
-                    android:textSize="20sp"
-                    android:background="@drawable/toggle_button_background"
-                    android:textColor="@color/toggle_text_color"
-                    android:layout_marginEnd="8dp" />
-
-                <!-- Checklist button -->
-                <ToggleButton
-                    android:id="@+id/toggle_checklist"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:textOn="✓"
-                    android:textOff="✓"
-                    android:textSize="16sp"
-                    android:background="@drawable/toggle_button_background"
-                    android:textColor="@color/toggle_text_color"
-                    android:layout_marginEnd="8dp" />
-            </LinearLayout>
-        </HorizontalScrollView>
 
         <!-- Save button aligned to the right -->
         <Button

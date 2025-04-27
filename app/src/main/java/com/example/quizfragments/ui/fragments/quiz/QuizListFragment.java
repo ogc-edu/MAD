@@ -9,9 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.PopupMenu;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -23,6 +21,7 @@ import com.example.quizfragments.data.db.entities.Quiz;
 import com.example.quizfragments.R;
 import com.example.quizfragments.data.db.AppDatabase;
 import com.example.quizfragments.ui.adapters.QuizAdapter;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +36,12 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
     private AppDatabase db;
     private EditText searchEditText;
     private Button btnAll, btnScience, btnHistory;
-    private TextView menuBtn;
+
+    // FAB variables
+    private FloatingActionButton fabMain, fabCreateQuiz, fabGenerateAI;
+    private TextView tvCreateQuizLabel, tvGenerateAILabel;
+    private View fabOverlay;
+    private boolean isFabMenuOpen = false;
 
     @Nullable
     @Override
@@ -52,28 +56,17 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
 
         // Initialize search and filter views
         searchEditText = view.findViewById(R.id.edit_search);
-        menuBtn = view.findViewById(R.id.menu_btn);
 
-        menuBtn.setOnClickListener(v -> {
-            PopupMenu popup = new PopupMenu(requireContext(), v); // or requireContext() in Fragment
-            popup.getMenuInflater().inflate(R.menu.quiz_menu, popup.getMenu());
+        // Initialize FAB components
+        fabMain = view.findViewById(R.id.fab_main);
+        fabCreateQuiz = view.findViewById(R.id.menu_new);
+        fabGenerateAI = view.findViewById(R.id.menu_ai);
+        tvCreateQuizLabel = view.findViewById(R.id.tv_new_quiz_label);
+        tvGenerateAILabel = view.findViewById(R.id.tv_ai_gen_label);
+        fabOverlay = view.findViewById(R.id.fab_overlay);
 
-            popup.setOnMenuItemClickListener(item -> {
-                if(item.getItemId() == R.id.menu_new){
-                    Toast.makeText(requireContext(), "New clicked", Toast.LENGTH_SHORT).show();
-                }
-                if(item.getItemId() == R.id.menu_ai){
-                        QuizGeneratorFragment quizGeneratorFragment = new QuizGeneratorFragment();
-                        requireActivity().getSupportFragmentManager()
-                                .beginTransaction()
-                                .replace(R.id.fragment_container, quizGeneratorFragment)
-                                .addToBackStack(null)
-                                .commit();
-                }
-                return true;
-            });
-            popup.show();
-        });
+        // Set FAB listeners
+        setupFabListeners();
 
         setupListeners();
 
@@ -87,10 +80,83 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
         return view;
     }
 
+    private void setupFabListeners() {
+        // Main FAB click listener
+        fabMain.setOnClickListener(view -> {
+            if (isFabMenuOpen) {
+                closeFabMenu();
+            } else {
+                openFabMenu();
+            }
+        });
+
+        // Create Quiz FAB click listener
+        fabCreateQuiz.setOnClickListener(view -> {
+            closeFabMenu();
+            navigateToCreateQuizFragment();
+        });
+
+        // Generate AI FAB click listener
+        fabGenerateAI.setOnClickListener(view -> {
+            closeFabMenu();
+            navigateToQuizGeneratorFragment();
+        });
+
+        // Overlay click listener to close the FAB menu
+        fabOverlay.setOnClickListener(view -> closeFabMenu());
+    }
+
+    private void openFabMenu() {
+        isFabMenuOpen = true;
+        fabOverlay.setVisibility(View.VISIBLE);
+        fabCreateQuiz.setVisibility(View.VISIBLE);
+        fabGenerateAI.setVisibility(View.VISIBLE);
+        tvCreateQuizLabel.setVisibility(View.VISIBLE);
+        tvGenerateAILabel.setVisibility(View.VISIBLE);
+
+        // Animate FAB rotation
+        fabMain.animate().rotation(45f).setDuration(300).start();
+
+        // You can add more animations here if needed
+        // For example, sliding animations for the other FABs
+    }
+
+    private void closeFabMenu() {
+        isFabMenuOpen = false;
+        fabOverlay.setVisibility(View.GONE);
+        fabCreateQuiz.setVisibility(View.INVISIBLE);
+        fabGenerateAI.setVisibility(View.INVISIBLE);
+        tvCreateQuizLabel.setVisibility(View.INVISIBLE);
+        tvGenerateAILabel.setVisibility(View.INVISIBLE);
+
+        // Animate FAB rotation back to original position
+        fabMain.animate().rotation(0f).setDuration(300).start();
+    }
+
+    private void navigateToCreateQuizFragment() {
+        // Navigate to CreateQuizFragment
+        CreateQuizFragment createQuizFragment = new CreateQuizFragment();
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, createQuizFragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    private void navigateToQuizGeneratorFragment() {
+        // Navigate to QuizGeneratorFragment
+        QuizGeneratorFragment quizGeneratorFragment = new QuizGeneratorFragment();
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, quizGeneratorFragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
     @Override
     public void onQuizClick(Quiz quiz) {
         // Navigate to QuizQuestionsFragment
-        QuizQuestionsFragment questionsFragment = QuizQuestionsFragment.newInstance(quiz.quizId, quiz.title);       //call a new fragment instance(implemented inside fragment file)
+        QuizQuestionsFragment questionsFragment = QuizQuestionsFragment.newInstance(quiz.quizId, quiz.title);
 
         requireActivity().getSupportFragmentManager()
                 .beginTransaction()
@@ -98,6 +164,7 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
                 .addToBackStack(null)
                 .commit();
     }
+
     private void setupListeners() {
         // Search functionality
         searchEditText.addTextChangedListener(new TextWatcher() {
@@ -112,7 +179,6 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
                 filterQuizzes(s.toString());
             }
         });
-
     }
 
     private void setActiveButton(Button activeButton) {
@@ -164,7 +230,6 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
 
             // If database is empty, add some sample quizzes
             if (quizzes.isEmpty()) {
-//                quizzes = createSampleQuizzes();
                 Log.d("empty", "no quiz found");
                 for (Quiz quiz : quizzes) {
                     db.quizDao().insert(quiz);
@@ -181,5 +246,14 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
             }
         });
         executor.shutdown();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Make sure the FAB menu is closed when returning to this fragment
+        if (isFabMenuOpen) {
+            closeFabMenu();
+        }
     }
 }
