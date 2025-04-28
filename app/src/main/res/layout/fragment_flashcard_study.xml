@@ -40,6 +40,16 @@
             android:textColor="#FFFFFF"
             android:textSize="24sp"
             android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btnMenu"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_more_vert"
+            android:contentDescription="@string/menu" />
     </RelativeLayout>
 
     <androidx.viewpager2.widget.ViewPager2

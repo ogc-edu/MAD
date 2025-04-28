@@ -40,4 +40,9 @@
     <string name="how_many_flashcards">How many flashcards to create?</string>
     <string name="enter_a_number_between_5_and_30">Enter a number between 5 and 30</string>
     <string name="generate_flashcards">Generate Flashcards</string>
+    <string name="menu" />
+    <string name="edit_flashcards">Edit Flashcards</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="edit">Edit</string>
+    <string name="delete">Delete</string>
 </resources>

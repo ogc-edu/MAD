@@ -19,7 +19,7 @@ public class Flashcard {
 
     private String question;
     private String answer;
-    private int deckId;
+    private final int deckId;
     private int position;
 
     public Flashcard(String question, String answer, int deckId) {
@@ -55,10 +55,6 @@ public class Flashcard {
 
     public int getDeckId() {
         return deckId;
-    }
-
-    public void setDeckId(int deckId) {
-        this.deckId = deckId;
     }
 
     public int getPosition() {

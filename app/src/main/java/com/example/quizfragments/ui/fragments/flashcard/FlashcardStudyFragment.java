@@ -1,10 +1,14 @@
 package com.example.quizfragments.ui.fragments.flashcard;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
+import android.widget.PopupMenu;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -59,7 +63,13 @@ public class FlashcardStudyFragment extends Fragment {
         tvCardCount = view.findViewById(R.id.tv_card_count);
         tvDeckTitle = view.findViewById(R.id.tv_deck_title);
 
-        view.findViewById(R.id.btnBack).setOnClickListener(v -> navigateBack());
+        ImageButton btnBack = view.findViewById(R.id.btnBack);
+        ImageButton btnMenu = view.findViewById(R.id.btnMenu);
+
+        btnBack.setOnClickListener(v -> navigateBack());
+
+        // Set up menu button
+        btnMenu.setOnClickListener(v -> showPopupMenu(v));
 
         adapter = new FlashcardAdapter(requireContext());
         viewPager.setAdapter(adapter);
@@ -74,6 +84,69 @@ public class FlashcardStudyFragment extends Fragment {
         loadFlashcards();
 
         return view;
+    }
+
+    private void showPopupMenu(View view) {
+        PopupMenu popupMenu = new PopupMenu(requireContext(), view);
+        popupMenu.inflate(R.menu.flashcard_study_menu);
+
+        popupMenu.setOnMenuItemClickListener(item -> {
+            int itemId = item.getItemId();
+
+            if (itemId == R.id.action_edit) {
+                navigateToEditFlashcards();
+                return true;
+            } else if (itemId == R.id.action_delete) {
+                showDeleteConfirmationDialog();
+                return true;
+            }
+
+            return false;
+        });
+
+        popupMenu.show();
+    }
+
+    private void navigateToEditFlashcards() {
+        requireActivity()
+                .getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, EditFlashcardFragment.newInstance(deckId))
+                .addToBackStack(null)
+                .commit();
+    }
+
+    private void showDeleteConfirmationDialog() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Delete Flashcard Deck")
+                .setMessage("Are you sure you want to delete this flashcard deck? This action cannot be undone.")
+                .setPositiveButton("Yes", (dialog, which) -> deleteDeck())
+                .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
+                .show();
+    }
+
+    private void deleteDeck() {
+        executor.execute(() -> {
+            AppDatabase db = DatabaseClient.getInstance(requireContext()).getAppDatabase();
+            FlashcardDeck deck = db.flashcardDeckDao().getDeckById(deckId);
+
+            if (deck != null) {
+                db.flashcardDeckDao().delete(deck);
+
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireContext(), "Deck deleted successfully", Toast.LENGTH_SHORT).show();
+                    navigateToFlashcardFragment();
+                });
+            }
+        });
+    }
+
+    private void navigateToFlashcardFragment() {
+        requireActivity()
+                .getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, new FlashcardFragment())
+                .commit();
     }
 
     private void loadFlashcards() {
