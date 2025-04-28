@@ -39,9 +39,7 @@ public class FlashcardFragment extends Fragment {
     private FloatingActionButton fabCreateAi;
     private TextView tvCreateManualLabel;
     private TextView tvCreateAiLabel;
-
     private View fabOverlay;
-
     private boolean isFabExpanded = false;
     private List<FlashcardDeck> deckList = new ArrayList<>();
     private FlashcardDeckAdapter adapter;
@@ -52,7 +50,6 @@ public class FlashcardFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.flashcard_dashboard, container, false);
 
-        // Initialize views
         recyclerFlashcardDecks = view.findViewById(R.id.recycler_flashcard_decks);
         tvEmptyState = view.findViewById(R.id.tv_empty_state);
         fabMain = view.findViewById(R.id.fab_main);
@@ -129,16 +126,14 @@ public class FlashcardFragment extends Fragment {
     }
 
     private void navigateToAiGeneratorFragment() {
-        showToast("AI Flashcard Generator - Coming soon!");
-        // Uncomment when you have created the AiGeneratorFragment
-        /*
-        Fragment aiGeneratorFragment = new AiGeneratorFragment();
+
+        Fragment flashcardGeneratorFragment = new FlashcardGeneratorFragment();
 
         FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
-        transaction.replace(R.id.fragment_container, aiGeneratorFragment);
+        transaction.replace(R.id.fragment_container, flashcardGeneratorFragment);
         transaction.addToBackStack(null);
         transaction.commit();
-        */
+
     }
 
     private void expandFab() {
@@ -298,9 +293,6 @@ public class FlashcardFragment extends Fragment {
     }
 
     private void loadFlashcardDecks() {
-        // Show loading indicator if needed
-        // loadingIndicator.setVisibility(View.VISIBLE);
-
         executor.execute(() -> {
             // Get database instance
             AppDatabase db = DatabaseClient.getInstance(requireContext()).getAppDatabase();
@@ -315,17 +307,6 @@ public class FlashcardFragment extends Fragment {
                 // Add all decks to the list
                 if (decks != null && !decks.isEmpty()) {
                     deckList.addAll(decks);
-                } else {
-                    // If no decks in database, show sample data for demonstration
-                    boolean showSampleData = false; // Set to false in production
-
-                    if (showSampleData) {
-                        for (int i = 1; i <= 3; i++) {
-                            FlashcardDeck deck = new FlashcardDeck("Sample Deck " + i, "Sample description for deck " + i);
-                            deck.setId(i);
-                            deckList.add(deck);
-                        }
-                    }
                 }
 
                 // Update visibility based on decks available
@@ -339,14 +320,7 @@ public class FlashcardFragment extends Fragment {
 
                 // Notify adapter of data change
                 adapter.notifyDataSetChanged();
-
-                // Hide loading indicator if implemented
-                // loadingIndicator.setVisibility(View.GONE);
             });
         });
-    }
-
-    private void showToast(String message) {
-        android.widget.Toast.makeText(requireContext(), message, android.widget.Toast.LENGTH_SHORT).show();
     }
 }

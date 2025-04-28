@@ -13,7 +13,7 @@ import java.util.List;
 @Dao
 public interface FlashcardDeckDao {
     @Insert
-    void insert(FlashcardDeck deck);
+    long insert(FlashcardDeck deck);
 
     @Update
     void update(FlashcardDeck deck);

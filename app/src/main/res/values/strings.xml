@@ -33,4 +33,11 @@
     <string name="add_flashcards">Add Flashcards</string>
     <string name="add_another_card">+ Add Another Card</string>
     <string name="save_deck">Save Deck</string>
+    <string name="deck_description_optional">Deck Description (Optional)</string>
+    <string name="generate_flashcards_with_ai">Generate AI Flashcards</string>
+    <string name="what_topic_would_you_like_to_study">What topic would you like to study?</string>
+    <string name="enter_topic_e_g_java_programming_anatomy">Enter topic (e.g., Java Programming, Anatomy)</string>
+    <string name="how_many_flashcards">How many flashcards to create?</string>
+    <string name="enter_a_number_between_5_and_30">Enter a number between 5 and 30</string>
+    <string name="generate_flashcards">Generate Flashcards</string>
 </resources>

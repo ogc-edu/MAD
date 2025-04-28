@@ -111,6 +111,11 @@ public class FlashcardStudyFragment extends Fragment {
     }
 
     private void navigateBack() {
-        requireActivity().getSupportFragmentManager().popBackStack();
+        requireActivity()
+                .getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, new FlashcardFragment())
+                .addToBackStack(null)
+                .commit();
     }
 }

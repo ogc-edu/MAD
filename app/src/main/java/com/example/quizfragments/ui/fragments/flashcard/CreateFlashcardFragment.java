@@ -44,6 +44,7 @@ public class CreateFlashcardFragment extends Fragment {
         view.findViewById(R.id.btnBack).setOnClickListener(v -> navigateBack());
 
         etDeckName = view.findViewById(R.id.et_deck_name);
+        etDeckDescription = view.findViewById(R.id.et_deck_description);
         flashcardsContainer = view.findViewById(R.id.flashcards_container);
         Button btnAddCard = view.findViewById(R.id.btn_add_card);
         Button btnSaveDeck = view.findViewById(R.id.btn_save_deck);
