@@ -6,7 +6,6 @@ import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Update;
 
-import com.example.quizfragments.data.db.entities.Folder;
 import com.example.quizfragments.data.db.entities.Note;
 
 import java.util.List;
@@ -15,7 +14,7 @@ import java.util.List;
 public interface NoteDao {
 
     @Insert
-    void insert(Note note);
+    long insert(Note note);
 
     @Update
     void update(Note note);

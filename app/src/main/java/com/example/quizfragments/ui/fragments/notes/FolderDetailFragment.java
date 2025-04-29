@@ -1,11 +1,14 @@
 package com.example.quizfragments.ui.fragments.notes;
 
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.app.AlertDialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ImageButton;
@@ -29,6 +32,7 @@ import com.example.quizfragments.data.db.entities.Folder;
 import com.example.quizfragments.data.db.entities.Note;
 import com.example.quizfragments.ui.adapters.NoteAdapter;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.example.quizfragments.data.api.AI;
 
 import java.util.List;
 
@@ -45,7 +49,8 @@ public class FolderDetailFragment extends Fragment implements NoteAdapter.OnNote
     private AppDatabase db;
     private EditText searchBox;
     private List<Note> allNotes = new ArrayList<>();
-
+    private boolean isFabRotated = false;
+    private FloatingActionButton fabAddNote;
 
     public static FolderDetailFragment newInstance(int folderId) {
         FolderDetailFragment fragment = new FolderDetailFragment();
@@ -80,7 +85,7 @@ public class FolderDetailFragment extends Fragment implements NoteAdapter.OnNote
         notesRecyclerView = view.findViewById(R.id.notes_recycler_view);
         emptyNotesView = view.findViewById(R.id.empty_notes_view);
         folderTitleHeader = view.findViewById(R.id.folder_title_header);
-        FloatingActionButton fabAddNote = view.findViewById(R.id.fab_add_note);
+        fabAddNote = view.findViewById(R.id.fab_add_note);
         ImageButton sortButton = view.findViewById(R.id.sort_button);
         ImageButton searchButton = view.findViewById(R.id.search_button);
         searchBox = view.findViewById(R.id.search_box);
@@ -129,7 +134,10 @@ public class FolderDetailFragment extends Fragment implements NoteAdapter.OnNote
         loadNotesSorted("lastModified");
 
         // Setup FAB click listener
-        fabAddNote.setOnClickListener(v -> showCreateNoteDialog());
+        fabAddNote.setOnClickListener(v -> {
+            rotateFab();
+            showNoteCreationOptions();
+        });
 
         //Set up sorting button
         sortButton.setOnClickListener(this::showSortMenu);
@@ -160,6 +168,195 @@ public class FolderDetailFragment extends Fragment implements NoteAdapter.OnNote
             @Override
             public void afterTextChanged(Editable s) {}
         });
+    }
+
+    //Animates the FAB with a rotation effect
+    private void rotateFab() {
+        ObjectAnimator rotate = ObjectAnimator.ofFloat(fabAddNote, "rotation",
+                isFabRotated ? 0f : 135f);
+        rotate.setDuration(200);
+        rotate.setInterpolator(new AccelerateDecelerateInterpolator());
+        rotate.start();
+        isFabRotated = !isFabRotated;
+    }
+
+
+    //Shows a dialog with options for note creation: manually or using AI
+    private void showNoteCreationOptions() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        builder.setTitle("Create Note");
+
+        // Inflate a custom view for the dialog
+        View view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_create_note_options, null);
+        builder.setView(view);
+
+        AlertDialog dialog = builder.create();
+
+        // Set up click listeners for the options
+        view.findViewById(R.id.btn_create_manual).setOnClickListener(v -> {
+            dialog.dismiss();
+            createNoteManually();
+        });
+
+        view.findViewById(R.id.btn_create_ai).setOnClickListener(v -> {
+            dialog.dismiss();
+            showAINoteCreationDialog();
+        });
+
+        dialog.show();
+    }
+
+    //Navigate to note detail fragment for creating a new note manually
+
+    private void createNoteManually() {
+        NoteDetailFragment noteDetailFragment = NoteDetailFragment.newInstance(folderId, 0);
+        requireActivity().getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, noteDetailFragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    //Shows a dialog to prompt the user for an AI-generated note topic
+    private void showAINoteCreationDialog() {
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_ai_note, null);
+        EditText topicInput = dialogView.findViewById(R.id.et_note_topic);
+
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setTitle("Create Note with AI")
+                .setView(dialogView)
+                .setPositiveButton("Generate", null)
+                .setNegativeButton("Cancel", null)
+                .create();
+
+        dialog.setOnShowListener(dialogInterface -> {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+                String topic = topicInput.getText().toString().trim();
+                if (topic.isEmpty()) {
+                    topicInput.setError("Please enter a topic");
+                } else {
+                    dialog.dismiss();
+                    generateAINote(topic);
+                }
+            });
+        });
+
+        dialog.show();
+    }
+
+    // Generates a note using AI based on the user's topic input
+    // The AI will generate both the title and content
+    private void generateAINote(String topic) {
+        // Show loading dialog
+        AlertDialog loadingDialog = new AlertDialog.Builder(requireContext())
+                .setTitle("Generating Note")
+                .setMessage("Creating your note with AI...")
+                .setCancelable(false)
+                .create();
+        loadingDialog.show();
+
+        // Create a prompt for the AI
+        String prompt = "Create a comprehensive educational note about \"" + topic + "\".\n\n" +
+                "Your response should be structured exactly like this:\n\n" +
+                "TITLE: [Concise and engaging title - maximum 5 words]\n\n" +
+                "Introduction: A short paragraph explaining the topic.\n" +
+                "*****************************************\n\n" +
+                "Main Sections:\n" +
+                "- Create 3 to 7 main sections.\n" +
+                "- For each section:\n" +
+                "  - Start with ONLY a numbered subtitle like:\n" +
+                "    1. Cell Membrane\n" +
+                "  (no colon, no bold, no description after the subtitle)\n" +
+                "  - After the subtitle, no spacing, list 2 to 4 bullet points (-) with key facts.\n\n" +
+                "*****************************************\n\n" +
+                "Conclusion: A short summary paragraph.\n\n" +
+                "Important rules:\n" +
+                "- Begin with 'TITLE:' followed by a concise title (max 5 words) that is not the same as the full topic.\n" +
+                "- Do NOT add a colon ':' after the subtitles.\n" +
+                "- Do NOT bold the subtitles.\n" +
+                "- Do NOT write explanation under the subtitle.\n" +
+                "- Bullet points must be simple and factual.\n" +
+                "- Use simple, clear language.";
+
+        // Call the AI API
+        AI.modelCall(prompt, new AI.ResponseCallback() {
+            @Override
+            public void onResponse(String result) {
+                loadingDialog.dismiss();
+                parseAndCreateNote(result);
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingDialog.dismiss();
+                Toast.makeText(requireContext(), "Error generating note: " + error, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    // Parse the AI response to extract the title and content
+    private void parseAndCreateNote(String aiResponse) {
+        String title;
+        String content;
+
+        // Extract the title from the AI response
+        if (aiResponse.startsWith("TITLE:")) {
+            int titleEndIndex = aiResponse.indexOf("\n\n");
+            if (titleEndIndex > 0) {
+                title = aiResponse.substring("TITLE:".length(), titleEndIndex).trim();
+                content = aiResponse.substring(titleEndIndex + 2).trim();
+            } else {
+                // Fallback if format is not as expected
+                title = "Note " + System.currentTimeMillis();
+                content = aiResponse;
+            }
+        } else {
+            // Fallback if the AI doesn't follow the format
+            title = "Note " + System.currentTimeMillis();
+            content = aiResponse;
+        }
+
+        // Ensure title isn't too long
+        if (title.length() > 50) {
+            title = title.substring(0, 47) + "...";
+        }
+
+        // Create the note with the extracted title and content
+        createNoteFromAIResponse(title, content);
+    }
+
+    //Creates a new note from the AI-generated content
+    private void createNoteFromAIResponse(String title, String content) {
+        // Create and save the note to the database
+        new Thread(() -> {
+            try {
+                // Create new note
+                Note newNote = new Note(folderId, title, content);
+                long noteId = db.noteDao().insert(newNote);
+
+                if (isAdded() && getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        if (isAdded()) {
+                            Toast.makeText(requireContext(), "AI note created", Toast.LENGTH_SHORT).show();
+
+                            // Navigate to the newly created note
+                            NoteDetailFragment noteDetailFragment = NoteDetailFragment.newInstance(
+                                    folderId, (int) noteId);
+                            requireActivity().getSupportFragmentManager().beginTransaction()
+                                    .replace(R.id.fragment_container, noteDetailFragment)
+                                    .addToBackStack(null)
+                                    .commit();
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                if (isAdded() && getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), "Error saving note: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    });
+                }
+            }
+        }).start();
     }
 
     private void updateEmptyViewVisibility() {
@@ -260,16 +457,6 @@ public class FolderDetailFragment extends Fragment implements NoteAdapter.OnNote
                 }
             }
         }).start();
-    }
-
-
-    private void showCreateNoteDialog() {
-        // Navigate to note detail fragment for creating a new note
-        NoteDetailFragment noteDetailFragment = NoteDetailFragment.newInstance(folderId, 0);
-        requireActivity().getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, noteDetailFragment)
-                .addToBackStack(null)
-                .commit();
     }
 
     @Override

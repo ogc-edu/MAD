@@ -198,19 +198,28 @@ public class NoteDetailFragment extends Fragment {
 
         // Create a prompt for the AI
         String prompt = "Summarize the following note clearly and concisely:\n\n" + noteContent + "\n\n" +
-                "Instructions:\n" +
-                "1. Write a short paragraph summary first (no title needed).\n" +
-                "2. Then, break down the key points into simple bullet points.\n" +
-                "3. Format:\n" +
-                "- Show the title (if available) as normal text.\n" +
-                "- Use '-' for bullet points.\n" +
-                "- Keep bullet points short, clear, and easy to understand.\n" +
-                "- Add one empty line between different sections if needed.\n\n" +
-                "Example:\n" +
-                "Cell Membrane\n" +
-                "- Controls entry and exit of substances\n" +
-                "- Made of lipid bilayer\n" +
-                "- Contains embedded proteins";
+                "Your response must follow this exact format:\n\n" +
+                "Summary:\n" +
+                "Write a short paragraph (1–2 sentences) offering a different viewpoint or angle of the topic." +
+                "*******************************\n\n" +
+                "Key Ideas:\n" +
+                "- Number each section (subtitle) as follows:\n" +
+                "    1. Similarities\n" +
+                "       - Cell membrane\n" +
+                "       - Cytoplasm\n" +
+                "       - Nucleus\n" +
+                "- Do not add colons or bold text after the subtitle.\n" +
+                "- After the subtitle, list the key points with bullet points using '-'.\n" +
+                "- Ensure the bullet points are simple and easy to understand.\n" +
+                "- List between 2 to 5 bullet points per section.\n\n" +
+                "*******************************\n\n" +
+                "Important formatting rules:\n" +
+                "- Start with 'Summary:' followed by the paragraph.\n" +
+                "- Insert this after the summary paragraph to have separation of content *******************************\n\n" +
+                "- Do NOT bold anything.\n" +
+                "- Do NOT add colons ':' after bullet points or subtitles.\n" +
+                "- Maintain exactly one empty line between sections.\n" +
+                "- Use simple, clear, and accessible language.";
 
 
         // Call the AI API
@@ -304,19 +313,28 @@ public class NoteDetailFragment extends Fragment {
         // Alternative prompt for a different perspective
         String prompt = "Please provide a different perspective summary for the following " +
                 (noteTitle.isEmpty() ? "note" : "note titled '" + noteTitle + "'") + ":\n\n" + noteContent + "\n\n" +
-                "Instructions:\n" +
-                "1. Create a concise summary focusing on different aspects (maximum 1–2 short paragraphs).\n" +
-                "2. Then, list the key ideas in simple bullet points.\n" +
-                "3. Format:\n" +
-                "- Use '-' for bullet points.\n" +
-                "- Keep points short and easy to understand.\n" +
-                "- Insert one empty line between different titles or sections if needed.\n\n" +
-                "Example:\n" +
-                "Nucleus\n" +
-                "- Controls cell activities\n" +
-                "- Contains genetic material (DNA)\n" +
-                "- Surrounded by nuclear envelope";
-
+                "Your response must follow this exact format:\n\n" +
+                "Summary:\n" +
+                "Write a short paragraph (1–2 sentences) offering a different viewpoint or angle of the topic.\n\n" +
+                "*******************************\n\n" +
+                "Key Ideas:\n" +
+                "- Number each section (subtitle) as follows:\n" +
+                "    1. Similarities\n" +
+                "       - Cell membrane\n" +
+                "       - Cytoplasm\n" +
+                "       - Nucleus\n" +
+                "- Do not add colons or bold text after the subtitle.\n" +
+                "- After the subtitle, list the key points with bullet points using '-'.\n" +
+                "- Ensure the bullet points are simple and easy to understand.\n" +
+                "- List between 2 to 5 bullet points per section.\n\n" +
+                "*******************************\n\n" +
+                "Important formatting rules:\n" +
+                "- Start with 'Summary:' followed by the paragraph.\n" +
+                "- Insert this after the summary paragraph to have separation of content *******************************\n\n" +
+                "- Do NOT bold anything.\n" +
+                "- Do NOT add colons ':' after bullet points or subtitles.\n" +
+                "- Maintain exactly one empty line between sections.\n" +
+                "- Use simple, clear, and accessible language.";
 
         // Call the AI API
         AI.modelCall(prompt, new AI.ResponseCallback() {
@@ -440,65 +458,6 @@ public class NoteDetailFragment extends Fragment {
                         .show();
             }
         });
-    }
-
-    //Shows a dialog for AI-powered note suggestions
-    private void showNoteSuggestionDialog() {
-        // Get current note content
-        String noteContent = contentEditText.getText().toString();
-
-        // Show dialog to confirm AI suggestion request
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Note Suggestions")
-                .setMessage("Get AI suggestions for improving your note?")
-                .setPositiveButton("Yes", (dialog, which) -> {
-                    // Show loading dialog
-                    AlertDialog loadingDialog = new AlertDialog.Builder(requireContext())
-                            .setTitle("Getting Suggestions")
-                            .setMessage("Analyzing your note...")
-                            .setCancelable(false)
-                            .create();
-                    loadingDialog.show();
-
-                    // Create prompt for note improvement
-                    String prompt = "Please analyze this note and suggest improvements or additions:\n\n" +
-                            noteContent + "\n\n" +
-                            "Provide specific suggestions for what could be added or improved.";
-
-                    // Call AI API
-                    AI.modelCall(prompt, new AI.ResponseCallback() {
-                        @Override
-                        public void onResponse(String result) {
-                            loadingDialog.dismiss();
-
-                            // Show suggestions in a dialog
-                            new AlertDialog.Builder(requireContext())
-                                    .setTitle("AI Suggestions")
-                                    .setMessage(result)
-                                    .setPositiveButton("Close", null)
-                                    .setNeutralButton("Add to Note", (d, w) -> {
-                                        // Add suggestions at the end of the note
-                                        Editable editable = contentEditText.getText();
-                                        String formattedSuggestions = "\n\n--- AI Suggestions ---\n" + result + "\n----------------------\n";
-                                        editable.append(formattedSuggestions);
-                                        Toast.makeText(requireContext(), "Suggestions added to note", Toast.LENGTH_SHORT).show();
-                                    })
-                                    .show();
-                        }
-
-                        @Override
-                        public void onError(String error) {
-                            loadingDialog.dismiss();
-                            new AlertDialog.Builder(requireContext())
-                                    .setTitle("Error")
-                                    .setMessage("Failed to get suggestions: " + error)
-                                    .setPositiveButton("OK", null)
-                                    .show();
-                        }
-                    });
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
     }
 
     private void loadNote() {
