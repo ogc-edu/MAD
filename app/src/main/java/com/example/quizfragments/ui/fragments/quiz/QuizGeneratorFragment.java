@@ -41,6 +41,9 @@ public class QuizGeneratorFragment extends Fragment {
     private ProgressBar progressBar;
     private String selectedDifficulty = "Medium"; // Default difficulty
     private TextView feedback;
+    private Button navToNewQuiz;
+    private long newId;
+    private String newTitle;
 
     @Override
     public View onCreateView(LayoutInflater inflater,ViewGroup container,Bundle savedInstanceState) {
@@ -53,6 +56,8 @@ public class QuizGeneratorFragment extends Fragment {
         generateButton = view.findViewById(R.id.generate_button);
         progressBar = view.findViewById(R.id.progress_bar);
         feedback = view.findViewById(R.id.ai_feedback);
+        navToNewQuiz = view.findViewById(R.id.newQuiz);
+        navToNewQuiz.setVisibility(View.GONE);
 
         // Set up the difficulty selection with custom popup
         difficultyTextView.setText(selectedDifficulty);
@@ -126,7 +131,7 @@ public class QuizGeneratorFragment extends Fragment {
         generateButton.setEnabled(false);
 
         // Generate quiz (placeholder function for your AI implementation)
-        generateQuizWithAI(topic, numQuestions, selectedDifficulty);
+        generateQuizWithAI(topic, numQuestions + 1, selectedDifficulty);
     }
 
     private void showDifficultyPopup() {
@@ -203,12 +208,14 @@ public class QuizGeneratorFragment extends Fragment {
                     Quiz quiz = new Quiz();
                     quiz.title = quizObject.getString("title");
                     quiz.description = quizObject.getString("description");
-                    quiz.questionCount = quizObject.getInt("question_count");;
+                    quiz.questionCount = jsonArray.length() - 1;;
 
                     // Use a single thread for the entire database operation
                     new Thread(() -> {
                         try {
                             long quizId = db.quizDao().insert(quiz);    //get id after inserting for fk constraints
+                            newId = quizId;
+                            newTitle = quiz.title;
 
                             for (int i = 1; i < jsonArray.length(); i++) {      //start from 1 because 0 is title & desc for quiz
                                 JSONObject obj = jsonArray.getJSONObject(i);
@@ -240,6 +247,7 @@ public class QuizGeneratorFragment extends Fragment {
                                 feedback.setText("Quiz generated successfully!");
                                 feedback.setTextColor(requireContext().getColor(R.color.aiSuccess));
                                 feedback.setVisibility(View.VISIBLE);
+                                navToNewQuiz.setVisibility(View.VISIBLE);
                             });
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -262,6 +270,15 @@ public class QuizGeneratorFragment extends Fragment {
             public void onError(String result){
 
             }
+        });
+        navToNewQuiz.setOnClickListener(v -> {      //after get response only show
+            QuizQuestionsFragment questionsFragment = QuizQuestionsFragment.newInstance((int)newId, newTitle);
+
+            requireActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, questionsFragment)
+                    .addToBackStack(null)
+                    .commit();
         });
     }
 }
