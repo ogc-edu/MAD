@@ -90,19 +90,16 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
             }
         });
 
-        // Create Quiz FAB click listener
         fabCreateQuiz.setOnClickListener(view -> {
             closeFabMenu();
             navigateToCreateQuizFragment();
         });
 
-        // Generate AI FAB click listener
         fabGenerateAI.setOnClickListener(view -> {
             closeFabMenu();
             navigateToQuizGeneratorFragment();
         });
 
-        // Overlay click listener to close the FAB menu
         fabOverlay.setOnClickListener(view -> closeFabMenu());
     }
 
@@ -113,12 +110,7 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
         fabGenerateAI.setVisibility(View.VISIBLE);
         tvCreateQuizLabel.setVisibility(View.VISIBLE);
         tvGenerateAILabel.setVisibility(View.VISIBLE);
-
-        // Animate FAB rotation
         fabMain.animate().rotation(45f).setDuration(300).start();
-
-        // You can add more animations here if needed
-        // For example, sliding animations for the other FABs
     }
 
     private void closeFabMenu() {
@@ -128,8 +120,6 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
         fabGenerateAI.setVisibility(View.INVISIBLE);
         tvCreateQuizLabel.setVisibility(View.INVISIBLE);
         tvGenerateAILabel.setVisibility(View.INVISIBLE);
-
-        // Animate FAB rotation back to original position
         fabMain.animate().rotation(0f).setDuration(300).start();
     }
 
@@ -166,7 +156,6 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
     }
 
     private void setupListeners() {
-        // Search functionality
         searchEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -180,41 +169,12 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
             }
         });
     }
-
-    private void setActiveButton(Button activeButton) {
-        // Reset all buttons
-        btnAll.setBackgroundTintList(getResources().getColorStateList(android.R.color.white));
-        btnAll.setTextColor(getResources().getColor(android.R.color.black));
-
-        btnScience.setBackgroundTintList(getResources().getColorStateList(android.R.color.white));
-        btnScience.setTextColor(getResources().getColor(android.R.color.black));
-
-        btnHistory.setBackgroundTintList(getResources().getColorStateList(android.R.color.white));
-        btnHistory.setTextColor(getResources().getColor(android.R.color.black));
-
-        // Set active button
-        activeButton.setBackgroundTintList(getResources().getColorStateList(android.R.color.holo_blue_light));
-        activeButton.setTextColor(getResources().getColor(android.R.color.white));
-    }
-
     private void filterQuizzes(String query) {
         List<Quiz> filteredList = new ArrayList<>();
 
         for (Quiz quiz : allQuizzes) {
             if (quiz.title.toLowerCase().contains(query.toLowerCase()) ||
                     quiz.description.toLowerCase().contains(query.toLowerCase())) {
-                filteredList.add(quiz);
-            }
-        }
-
-        quizAdapter.setQuizzes(filteredList);
-    }
-
-    private void filterByCategory(String category) {
-        List<Quiz> filteredList = new ArrayList<>();
-
-        for (Quiz quiz : allQuizzes) {
-            if (quiz.description.contains(category)) {
                 filteredList.add(quiz);
             }
         }
@@ -242,7 +202,12 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
             // Update UI on main thread
             if (getActivity() != null) {
                 List<Quiz> finalQuizzes = quizzes;
-                getActivity().runOnUiThread(() -> quizAdapter.setQuizzes(finalQuizzes));
+                getActivity().runOnUiThread(() -> {
+                    if(finalQuizzes.size() == 0){
+
+                    }
+                    quizAdapter.setQuizzes(finalQuizzes);
+                });
             }
         });
         executor.shutdown();
