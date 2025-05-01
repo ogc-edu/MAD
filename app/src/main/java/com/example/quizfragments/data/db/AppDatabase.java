@@ -6,8 +6,7 @@ import androidx.room.Database;
 import androidx.room.RoomDatabase;
 @Database(
         entities = {Quiz.class, Question.class, Option.class, Folder.class, Note.class, Category.class, Flashcard.class, FlashcardDeck.class},
-        version = 9,
-        exportSchema = false
+        version = 10
 )
 public abstract class AppDatabase extends RoomDatabase{
     public abstract QuizDao quizDao();

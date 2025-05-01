@@ -8,6 +8,7 @@ import com.example.quizfragments.ui.fragments.home.HomeFragment;
 import com.example.quizfragments.ui.fragments.notes.NotesFragment;
 import com.example.quizfragments.R;
 import com.example.quizfragments.ui.fragments.flashcard.FlashcardFragment;
+import com.example.quizfragments.ui.fragments.quiz.QuizListFragment;
 import com.example.quizfragments.ui.fragments.quiz.firstPage;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
@@ -27,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
             } else if (id == R.id.note_dash) {
                 selectedFragment = new NotesFragment();
             } else if (id == R.id.quiz_dash) {
-                selectedFragment = new firstPage();
+                selectedFragment = new QuizListFragment();
             } else if (id == R.id.flashcard_dash) {
                 selectedFragment = new FlashcardFragment();
             }
