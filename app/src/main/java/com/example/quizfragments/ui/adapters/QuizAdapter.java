@@ -111,6 +111,23 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.QuizViewHolder
         notifyDataSetChanged();
     }
 
+    // Method to get a quiz at a specific position (needed for swipe-to-delete)
+    public Quiz getQuizAt(int position) {
+        return quizzes.get(position);
+    }
+
+    // Method to remove a quiz at a specific position (needed for swipe-to-delete)
+    public void removeQuiz(int position) {
+        quizzes.remove(position);
+        notifyItemRemoved(position);
+    }
+
+    // Method to add a quiz back at a specific position (needed for undo functionality)
+    public void addQuiz(int position, Quiz quiz) {
+        quizzes.add(position, quiz);
+        notifyItemInserted(position);
+    }
+
     @Override
     public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
         super.onDetachedFromRecyclerView(recyclerView);
