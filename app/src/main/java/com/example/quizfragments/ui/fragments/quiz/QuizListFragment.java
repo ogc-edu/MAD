@@ -1,5 +1,9 @@
 package com.example.quizfragments.ui.fragments.quiz;
 
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -13,15 +17,19 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.room.Room;
 import com.example.quizfragments.data.db.entities.Quiz;
 import com.example.quizfragments.R;
 import com.example.quizfragments.data.db.AppDatabase;
+import com.example.quizfragments.data.db.DatabaseClient;
 import com.example.quizfragments.ui.adapters.QuizAdapter;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +44,8 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
     private AppDatabase db;
     private EditText searchEditText;
     private Button btnAll, btnScience, btnHistory;
+    private RecyclerView recyclerView;
+    private TextView tvEmptyQuizzes;
 
     // FAB variables
     private FloatingActionButton fabMain, fabCreateQuiz, fabGenerateAI;
@@ -49,10 +59,13 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
         View view = inflater.inflate(R.layout.fragment_quiz_list, container, false);
 
         // Initialize RecyclerView
-        RecyclerView recyclerView = view.findViewById(R.id.recycler_quizzes);
+        recyclerView = view.findViewById(R.id.recycler_quizzes);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         quizAdapter = new QuizAdapter(getContext(), this);
         recyclerView.setAdapter(quizAdapter);
+
+        // Initialize empty state TextView
+        tvEmptyQuizzes = view.findViewById(R.id.tv_empty_quizzes);
 
         // Initialize search and filter views
         searchEditText = view.findViewById(R.id.edit_search);
@@ -65,19 +78,135 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
         tvGenerateAILabel = view.findViewById(R.id.tv_ai_gen_label);
         fabOverlay = view.findViewById(R.id.fab_overlay);
 
+        // Set up swipe to delete
+        setupSwipeToDelete();
+
         // Set FAB listeners
         setupFabListeners();
 
         setupListeners();
 
         // Initialize database
-        db = Room.databaseBuilder(requireContext(),
-                AppDatabase.class, "database").build();
+        db = DatabaseClient.getInstance(requireContext()).getAppDatabase();
 
         // Load quizzes from database
         loadQuizzes();
 
         return view;
+    }
+
+    private void setupSwipeToDelete() {
+        // Create a callback for swipe actions
+        ItemTouchHelper.SimpleCallback swipeCallback = new ItemTouchHelper.SimpleCallback(
+                0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+
+            private final ColorDrawable background = new ColorDrawable(Color.parseColor("#FF5252"));
+            private final Drawable deleteIcon = ContextCompat.getDrawable(requireContext(), android.R.drawable.ic_menu_delete);
+
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView,
+                                  @NonNull RecyclerView.ViewHolder viewHolder,
+                                  @NonNull RecyclerView.ViewHolder target) {
+                return false; // We don't want drag & drop
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                int position = viewHolder.getAdapterPosition();
+                Quiz deletedQuiz = quizAdapter.getQuizAt(position);
+
+                // Remove from adapter
+                quizAdapter.removeQuiz(position);
+
+                // Check if the list is now empty
+                updateEmptyState();
+
+                // Show a snackbar with undo option
+                Snackbar.make(recyclerView, "Quiz deleted", Snackbar.LENGTH_LONG)
+                        .setAction("UNDO", v -> {
+                            // Add quiz back to adapter
+                            quizAdapter.addQuiz(position, deletedQuiz);
+                            updateEmptyState();
+                        })
+                        .addCallback(new Snackbar.Callback() {
+                            @Override
+                            public void onDismissed(Snackbar snackbar, int event) {
+                                // If snackbar is dismissed without clicking UNDO, delete from database
+                                if (event != Snackbar.Callback.DISMISS_EVENT_ACTION) {
+                                    deleteQuizFromDatabase(deletedQuiz);
+                                }
+                            }
+                        })
+                        .show();
+            }
+
+            @Override
+            public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView,
+                                    @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY,
+                                    int actionState, boolean isCurrentlyActive) {
+
+                View itemView = viewHolder.itemView;
+
+                // Don't draw when item is swiped out of the screen
+                if (Math.abs(dX) < 0.1) {
+                    super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
+                    return;
+                }
+
+                // Draw red background
+                background.setBounds(
+                        itemView.getLeft(),
+                        itemView.getTop(),
+                        itemView.getRight(),
+                        itemView.getBottom());
+                background.draw(c);
+
+                // Calculate position of delete icon
+                int iconMargin = (itemView.getHeight() - deleteIcon.getIntrinsicHeight()) / 2;
+                int iconTop = itemView.getTop() + iconMargin;
+                int iconBottom = iconTop + deleteIcon.getIntrinsicHeight();
+
+                // Draw delete icon based on swipe direction
+                if (dX > 0) { // Swiping to the right
+                    int iconLeft = itemView.getLeft() + iconMargin;
+                    int iconRight = itemView.getLeft() + iconMargin + deleteIcon.getIntrinsicWidth();
+                    deleteIcon.setBounds(iconLeft, iconTop, iconRight, iconBottom);
+                } else { // Swiping to the left
+                    int iconRight = itemView.getRight() - iconMargin;
+                    int iconLeft = itemView.getRight() - iconMargin - deleteIcon.getIntrinsicWidth();
+                    deleteIcon.setBounds(iconLeft, iconTop, iconRight, iconBottom);
+                }
+
+                deleteIcon.draw(c);
+
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
+            }
+        };
+
+        // Attach the ItemTouchHelper to the RecyclerView
+        new ItemTouchHelper(swipeCallback).attachToRecyclerView(recyclerView);
+    }
+
+    private void deleteQuizFromDatabase(Quiz quiz) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            // Delete from database
+            db.quizDao().delete(quiz);
+
+            // Update allQuizzes list
+            allQuizzes.remove(quiz);
+        });
+        executor.shutdown();
+    }
+
+    private void updateEmptyState() {
+        if (quizAdapter.getItemCount() == 0) {
+            recyclerView.setVisibility(View.GONE);
+            tvEmptyQuizzes.setVisibility(View.VISIBLE);
+        } else {
+            recyclerView.setVisibility(View.VISIBLE);
+            tvEmptyQuizzes.setVisibility(View.GONE);
+        }
     }
 
     private void setupFabListeners() {
@@ -180,6 +309,7 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
         }
 
         quizAdapter.setQuizzes(filteredList);
+        updateEmptyState();
     }
 
     private void loadQuizzes() {
@@ -203,10 +333,8 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
             if (getActivity() != null) {
                 List<Quiz> finalQuizzes = quizzes;
                 getActivity().runOnUiThread(() -> {
-                    if(finalQuizzes.size() == 0){
-
-                    }
                     quizAdapter.setQuizzes(finalQuizzes);
+                    updateEmptyState();
                 });
             }
         });

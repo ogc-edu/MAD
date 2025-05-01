@@ -55,6 +55,19 @@
                 android:clipToPadding="false"
                 android:paddingTop="8dp"
                 android:paddingBottom="8dp" />
+
+            <!-- Empty State TextView -->
+            <TextView
+                android:id="@+id/tv_empty_quizzes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:text="Your quiz list is empty.\nPlease create one."
+                android:textSize="18sp"
+                android:textColor="#80000000"
+                android:padding="16dp"
+                android:visibility="gone" />
         </FrameLayout>
     </LinearLayout>
 

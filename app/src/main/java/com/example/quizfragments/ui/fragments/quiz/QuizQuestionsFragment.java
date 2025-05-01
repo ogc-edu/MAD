@@ -38,7 +38,7 @@ public class QuizQuestionsFragment extends Fragment implements QuestionAdapter.O
 
     private static final String ARG_QUIZ_ID = "quiz_id";
     private static final String ARG_QUIZ_TITLE = "quiz_title";
-
+    private TextView label;
     private TextView tvQuestionCount;
     private TextView tvProgress;
     private QuestionAdapter adapter;
@@ -82,6 +82,7 @@ public class QuizQuestionsFragment extends Fragment implements QuestionAdapter.O
         }
 
         // Initialize views
+        label = view.findViewById(R.id.label);
         TextView tvQuizTitle = view.findViewById(R.id.quizTitle);
         tvQuestionCount = view.findViewById(R.id.tvQuestionCount);
         tvProgress = view.findViewById(R.id.tvProgress);
@@ -147,6 +148,7 @@ public class QuizQuestionsFragment extends Fragment implements QuestionAdapter.O
             int numAttempt = quizDao.getNumberOfAttemptedQuestion(quizId);
 
             requireActivity().runOnUiThread(() -> {
+                label.setText(String.valueOf(quizTitle.charAt(0)));
                 questions = questionWithStatusList;
                 adapter.updateQuestions(questions);
                 tvQuestionCount.setText(questionCount + " Questions");
