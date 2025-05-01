@@ -1,5 +1,6 @@
 package com.example.quizfragments.ui.fragments.quiz;
 
+import android.app.AlertDialog;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -113,31 +114,10 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
                 int position = viewHolder.getAdapterPosition();
-                Quiz deletedQuiz = quizAdapter.getQuizAt(position);
+                Quiz quizToDelete = quizAdapter.getQuizAt(position);
 
-                // Remove from adapter
-                quizAdapter.removeQuiz(position);
-
-                // Check if the list is now empty
-                updateEmptyState();
-
-                // Show a snackbar with undo option
-                Snackbar.make(recyclerView, "Quiz deleted", Snackbar.LENGTH_LONG)
-                        .setAction("UNDO", v -> {
-                            // Add quiz back to adapter
-                            quizAdapter.addQuiz(position, deletedQuiz);
-                            updateEmptyState();
-                        })
-                        .addCallback(new Snackbar.Callback() {
-                            @Override
-                            public void onDismissed(Snackbar snackbar, int event) {
-                                // If snackbar is dismissed without clicking UNDO, delete from database
-                                if (event != Snackbar.Callback.DISMISS_EVENT_ACTION) {
-                                    deleteQuizFromDatabase(deletedQuiz);
-                                }
-                            }
-                        })
-                        .show();
+                // Show confirmation dialog
+                showDeleteConfirmationDialog(position, quizToDelete);
             }
 
             @Override
@@ -185,6 +165,54 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
 
         // Attach the ItemTouchHelper to the RecyclerView
         new ItemTouchHelper(swipeCallback).attachToRecyclerView(recyclerView);
+    }
+
+    private void showDeleteConfirmationDialog(int position, Quiz quiz) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        builder.setTitle("Delete Quiz");
+        builder.setMessage("Are you sure you want to delete \"" + quiz.title + "\"?");
+
+        // Add the buttons
+        builder.setPositiveButton("Delete", (dialog, id) -> {
+            // User confirmed deletion
+            deleteQuiz(position, quiz);
+        });
+
+        builder.setNegativeButton("Cancel", (dialog, id) -> {
+            // User cancelled the dialog
+            // Reset the item in the RecyclerView
+            quizAdapter.notifyItemChanged(position);
+        });
+
+        // Create and show the AlertDialog
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    private void deleteQuiz(int position, Quiz deletedQuiz) {
+        // Remove from adapter
+        quizAdapter.removeQuiz(position);
+
+        // Check if the list is now empty
+        updateEmptyState();
+
+        // Show a snackbar with undo option
+        Snackbar.make(recyclerView, "Quiz deleted", Snackbar.LENGTH_LONG)
+                .setAction("UNDO", v -> {
+                    // Add quiz back to adapter
+                    quizAdapter.addQuiz(position, deletedQuiz);
+                    updateEmptyState();
+                })
+                .addCallback(new Snackbar.Callback() {
+                    @Override
+                    public void onDismissed(Snackbar snackbar, int event) {
+                        // If snackbar is dismissed without clicking UNDO, delete from database
+                        if (event != Snackbar.Callback.DISMISS_EVENT_ACTION) {
+                            deleteQuizFromDatabase(deletedQuiz);
+                        }
+                    }
+                })
+                .show();
     }
 
     private void deleteQuizFromDatabase(Quiz quiz) {

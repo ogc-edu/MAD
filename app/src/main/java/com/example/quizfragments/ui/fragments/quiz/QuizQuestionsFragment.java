@@ -1,5 +1,6 @@
 package com.example.quizfragments.ui.fragments.quiz;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -109,6 +110,7 @@ public class QuizQuestionsFragment extends Fragment implements QuestionAdapter.O
         loadQuestions();
     }
 
+    @SuppressLint("SetTextI18n")
     private void loadQuestions() {
         questions.clear();
         //run database
@@ -162,11 +164,20 @@ public class QuizQuestionsFragment extends Fragment implements QuestionAdapter.O
 
         }).start();
     }
-    
+
     private void startQuiz() {
-        Toast.makeText(requireContext(), "Starting quiz...", Toast.LENGTH_SHORT).show();
-        // In a real app, this would navigate to the first unattempted question
+        if (questions != null && !questions.isEmpty()) {
+            QuestionWithStatus firstQuestion = questions.get(0);
+            QuestionDetailFragment fragment = QuestionDetailFragment.newInstance(quizId, firstQuestion.getQuestionId());
+            requireActivity().getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
+                    .addToBackStack(null)
+                    .commit();
+        } else {
+            Toast.makeText(requireContext(), "No questions available to start the quiz.", Toast.LENGTH_SHORT).show();
+        }
     }
+
 
     @Override
     public void onQuestionClick(QuestionWithStatus question, int position) {
