@@ -9,7 +9,6 @@ import com.example.quizfragments.ui.fragments.notes.NotesFragment;
 import com.example.quizfragments.R;
 import com.example.quizfragments.ui.fragments.flashcard.FlashcardFragment;
 import com.example.quizfragments.ui.fragments.quiz.QuizListFragment;
-import com.example.quizfragments.ui.fragments.quiz.firstPage;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class MainActivity extends AppCompatActivity {
