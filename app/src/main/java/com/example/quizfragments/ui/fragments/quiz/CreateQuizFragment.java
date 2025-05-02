@@ -38,7 +38,6 @@ public class CreateQuizFragment extends Fragment {
 
     private EditText editQuizTitle;
     private EditText editQuizDescription;
-    private Spinner spinnerCategory;
     private RecyclerView recyclerQuestions;
     private Button btnAddQuestion;
     private Button btnSaveQuiz;
@@ -65,14 +64,10 @@ public class CreateQuizFragment extends Fragment {
         // Initialize views
         editQuizTitle = view.findViewById(R.id.edit_quiz_title);
         editQuizDescription = view.findViewById(R.id.edit_quiz_description);
-        spinnerCategory = view.findViewById(R.id.spinner_category);
         recyclerQuestions = view.findViewById(R.id.recycler_questions);
         btnAddQuestion = view.findViewById(R.id.btn_add_question);
         btnSaveQuiz = view.findViewById(R.id.btn_save_quiz);
         btnBack = view.findViewById(R.id.btn_back);
-
-        // Set up category spinner
-        setupCategorySpinner();
 
         // Set up RecyclerView
         questionAdapter = new CreateQuestionAdapter(requireContext(), questionsList,
@@ -105,13 +100,6 @@ public class CreateQuizFragment extends Fragment {
         btnSaveQuiz.setOnClickListener(v -> saveQuiz());
 
         btnBack.setOnClickListener(v -> requireActivity().getSupportFragmentManager().popBackStack());
-    }
-
-    private void setupCategorySpinner() {
-        String[] categories = {"General Knowledge", "Science", "History", "Geography", "Entertainment", "Sports", "Technology", "Mathematics"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, categories);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerCategory.setAdapter(adapter);
     }
 
     private void showAddQuestionDialog(int editPosition) {
@@ -269,7 +257,6 @@ public class CreateQuizFragment extends Fragment {
     private void saveQuiz() {
         String title = editQuizTitle.getText().toString().trim();
         String description = editQuizDescription.getText().toString().trim();
-        String category = spinnerCategory.getSelectedItem().toString();
 
         if (title.isEmpty() || description.isEmpty()) {
             Toast.makeText(requireContext(), "Please enter title and description", Toast.LENGTH_SHORT).show();
@@ -286,7 +273,7 @@ public class CreateQuizFragment extends Fragment {
             // Create Quiz entity
             Quiz quiz = new Quiz();
             quiz.title = title;
-            quiz.description = description + " - " + category; // Store category in description
+            quiz.description = description;
             quiz.questionCount = questionsList.size();
 
             // Insert quiz and get its ID
