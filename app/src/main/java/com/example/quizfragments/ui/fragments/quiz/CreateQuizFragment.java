@@ -57,11 +57,11 @@ public class CreateQuizFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Initialize database
+        //init db adn executor
         db = DatabaseClient.getInstance(requireContext()).getAppDatabase();
         executor = Executors.newSingleThreadExecutor();
 
-        // Initialize views
+        //Initialize first
         editQuizTitle = view.findViewById(R.id.edit_quiz_title);
         editQuizDescription = view.findViewById(R.id.edit_quiz_description);
         recyclerQuestions = view.findViewById(R.id.recycler_questions);
@@ -69,7 +69,6 @@ public class CreateQuizFragment extends Fragment {
         btnSaveQuiz = view.findViewById(R.id.btn_save_quiz);
         btnBack = view.findViewById(R.id.btn_back);
 
-        // Set up RecyclerView
         questionAdapter = new CreateQuestionAdapter(requireContext(), questionsList,
                 new CreateQuestionAdapter.QuestionActionListener() {
                     @Override
@@ -94,11 +93,8 @@ public class CreateQuizFragment extends Fragment {
         recyclerQuestions.setAdapter(questionAdapter);
         recyclerQuestions.post(() -> updateRecyclerViewHeight());
 
-        // Set click listeners
         btnAddQuestion.setOnClickListener(v -> showAddQuestionDialog(-1));
-
         btnSaveQuiz.setOnClickListener(v -> saveQuiz());
-
         btnBack.setOnClickListener(v -> requireActivity().getSupportFragmentManager().popBackStack());
     }
 
@@ -118,10 +114,8 @@ public class CreateQuizFragment extends Fragment {
         RadioButton radioOption3 = dialogView.findViewById(R.id.radio_option_3);
         RadioButton radioOption4 = dialogView.findViewById(R.id.radio_option_4);
 
-        // Get the RadioGroup but we won't rely solely on it
         RadioGroup radioGroupOptions = dialogView.findViewById(R.id.radio_group_options);
 
-        // IMPORTANT: Set individual click listeners for each radio button
         radioOption1.setOnClickListener(v -> {
             radioOption1.setChecked(true);
             radioOption2.setChecked(false);
@@ -153,14 +147,11 @@ public class CreateQuizFragment extends Fragment {
         Button btnCancel = dialogView.findViewById(R.id.btn_cancel);
         Button btnAdd = dialogView.findViewById(R.id.btn_add);
 
-        // Set dialog title and button text based on whether we're editing or adding
         if (editPosition != -1) {
-            // We're editing an existing question
             QuestionWithOptions question = questionsList.get(editPosition);
             editQuestionText.setText(question.getQuestionText());
 
             List<OptionItem> options = question.getOptions();
-            // Ensure all radio buttons are unchecked first
             radioOption1.setChecked(false);
             radioOption2.setChecked(false);
             radioOption3.setChecked(false);
@@ -185,7 +176,6 @@ public class CreateQuizFragment extends Fragment {
 
             btnAdd.setText("Update");
         } else {
-            // Default select the first option for new questions
             radioOption1.setChecked(true);
             radioOption2.setChecked(false);
             radioOption3.setChecked(false);
@@ -202,7 +192,6 @@ public class CreateQuizFragment extends Fragment {
                 Toast.makeText(getContext(), "Something went wrong. Please try again.", Toast.LENGTH_SHORT).show();
                 return;
             }
-            // Validate inputs
             String questionText = editQuestionText.getText().toString().trim();
             String option1Text = editOption1.getText().toString().trim();
             String option2Text = editOption2.getText().toString().trim();
@@ -215,21 +204,18 @@ public class CreateQuizFragment extends Fragment {
                 return;
             }
 
-            // Check if any radio button is selected
             if (!radioOption1.isChecked() && !radioOption2.isChecked() &&
                     !radioOption3.isChecked() && !radioOption4.isChecked()) {
                 Toast.makeText(requireContext(), "Please select the correct answer", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            // Create options list
             List<OptionItem> options = new ArrayList<>();
             options.add(new OptionItem(option1Text, radioOption1.isChecked()));
             options.add(new OptionItem(option2Text, radioOption2.isChecked()));
             options.add(new OptionItem(option3Text, radioOption3.isChecked()));
             options.add(new OptionItem(option4Text, radioOption4.isChecked()));
 
-            // Create QuestionWithOptions object
             QuestionWithOptions questionItem;
             if (editPosition != -1) {
                 // Update existing question
@@ -239,7 +225,7 @@ public class CreateQuizFragment extends Fragment {
                 questionAdapter.notifyItemChanged(editPosition);
                 updateRecyclerViewHeight();
             } else {
-                // Add new question
+                //Add new questions
                 questionItem = new QuestionWithOptions(
                         questionsList.size() + 1,
                         questionText,
@@ -268,22 +254,16 @@ public class CreateQuizFragment extends Fragment {
             return;
         }
 
-        // Save quiz to database
+        // Save quiz to db
         executor.execute(() -> {
-            // Create Quiz entity
             Quiz quiz = new Quiz();
             quiz.title = title;
             quiz.description = description;
             quiz.questionCount = questionsList.size();
-
-            // Insert quiz and get its ID
             long quizId = db.quizDao().insert(quiz);
 
-            // Insert all questions and options
             for (int i = 0; i < questionsList.size(); i++) {
                 QuestionWithOptions questionWithOptions = questionsList.get(i);
-
-                // Create Question entity
                 Question question = new Question();
                 question.quizId = (int) quizId;
                 question.questionNumber = i + 1;
@@ -291,10 +271,8 @@ public class CreateQuizFragment extends Fragment {
                 question.attempted = 0;
                 question.userAnswer = -1;
 
-                // Insert question and get its ID
+                // Insert question
                 long questionId = db.questionDao().insert(question);
-
-                // Insert options for this question
                 List<OptionItem> optionItems = questionWithOptions.getOptions();
                 for (int j = 0; j < optionItems.size(); j++) {
                     OptionItem optionItem = optionItems.get(j);
@@ -308,7 +286,6 @@ public class CreateQuizFragment extends Fragment {
                 }
             }
 
-            // Return to quiz list on main thread
             requireActivity().runOnUiThread(() -> {
                 Toast.makeText(requireContext(), "Quiz saved successfully", Toast.LENGTH_SHORT).show();
                 requireActivity().getSupportFragmentManager().popBackStack();
@@ -318,35 +295,27 @@ public class CreateQuizFragment extends Fragment {
 
     private void updateRecyclerViewHeight() {
         recyclerQuestions.post(() -> {
-            // Force a layout pass to ensure all children are measured
             recyclerQuestions.requestLayout();
 
-            // Get adapter
             CreateQuestionAdapter adapter = (CreateQuestionAdapter) recyclerQuestions.getAdapter();
             if (adapter == null || adapter.getItemCount() == 0) {
-                // Set a minimum height if there are no items
                 ViewGroup.LayoutParams params = recyclerQuestions.getLayoutParams();
-                params.height = 100; // Minimum height in dp
+                params.height = 100;
                 recyclerQuestions.setLayoutParams(params);
                 return;
             }
-
-            // For a more reliable approach, calculate height based on item count and average item height
             RecyclerView.LayoutManager layoutManager = recyclerQuestions.getLayoutManager();
             if (layoutManager instanceof LinearLayoutManager) {
                 int itemCount = adapter.getItemCount();
-                int estimatedItemHeight = 200; // Default estimated height for each item in dp
+                int estimatedItemHeight = 200;
 
-                // Get actual height of first visible item if possible
                 View firstChild = recyclerQuestions.getChildAt(0);
                 if (firstChild != null) {
                     estimatedItemHeight = firstChild.getHeight();
                 }
 
-                // Calculate total height with some extra space
                 int totalHeight = itemCount * estimatedItemHeight + 50; // Add some padding
 
-                // Set new height
                 ViewGroup.LayoutParams params = recyclerQuestions.getLayoutParams();
                 params.height = totalHeight;
                 recyclerQuestions.setLayoutParams(params);
@@ -362,7 +331,6 @@ public class CreateQuizFragment extends Fragment {
         }
     }
 
-    // Helper class to store question data with options
     public static class QuestionWithOptions {
         private int questionNumber;
         private String questionText;
@@ -408,7 +376,6 @@ public class CreateQuizFragment extends Fragment {
         }
     }
 
-    // Helper class to store option data
     public static class OptionItem {
         private String text;
         private boolean isCorrect;

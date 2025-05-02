@@ -106,14 +106,12 @@ public class QuizGeneratorFragment extends Fragment {
     private void validateAndGenerateQuiz() {
         String topic = topicEditText.getText().toString().trim();
         String numQuestionsStr = numQuestionsEditText.getText().toString().trim();
-
-        // Validate topic
+        //check topic
         if (topic.isEmpty()) {
             topicEditText.setError("Please enter a quiz topic");
             return;
         }
-
-        // Validate number of questions
+        //check quuestion
         int numQuestions;
         try {
             numQuestions = Integer.parseInt(numQuestionsStr);
@@ -130,26 +128,20 @@ public class QuizGeneratorFragment extends Fragment {
         progressBar.setVisibility(View.VISIBLE);
         generateButton.setEnabled(false);
 
-        // Generate quiz (placeholder function for your AI implementation)
         generateQuizWithAI(topic, numQuestions + 1, selectedDifficulty);
     }
 
     private void showDifficultyPopup() {
-        // Create a custom popup menu
         View popupView = LayoutInflater.from(requireContext()).inflate(R.layout.popup_difficulty, null);
-
-        // Create the popup window
         int width = LinearLayout.LayoutParams.WRAP_CONTENT;
         int height = LinearLayout.LayoutParams.WRAP_CONTENT;
         final PopupWindow popupWindow = new PopupWindow(popupView, width, height, true);
         popupWindow.setElevation(10);
 
-        // Set up difficulty options
         TextView easyOption = popupView.findViewById(R.id.option_easy);
         TextView mediumOption = popupView.findViewById(R.id.option_medium);
         TextView hardOption = popupView.findViewById(R.id.option_hard);
 
-        // Set up click listeners
         easyOption.setOnClickListener(v -> {
             selectedDifficulty = "Easy";
             difficultyTextView.setText(selectedDifficulty);

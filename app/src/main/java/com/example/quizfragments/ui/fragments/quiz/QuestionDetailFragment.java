@@ -40,8 +40,6 @@ public class QuestionDetailFragment extends Fragment {
     private int questionId;
     private TextView tvQuestionNumber;
     private TextView tvQuestionText;
-    private TextView tvProgress;
-    private ProgressBar progressBar;
     private RadioGroup radioGroupOptions;
     private List<RadioButton> optionButtons;
     private Quiz currentQuiz;
@@ -96,9 +94,7 @@ public class QuestionDetailFragment extends Fragment {
         nextBtn = view.findViewById(R.id.btn_next);
         nextBtn.setOnClickListener(v -> {
 
-            // Run the database query in a background thread
             new Thread(() -> {
-                // Get the database instance
                 AppDatabase db = DatabaseClient.getInstance(requireContext()).getAppDatabase();
                 QuestionDao questionDao = db.questionDao();
                 Question question = questionDao.getQuestionById(questionId);
@@ -106,25 +102,16 @@ public class QuestionDetailFragment extends Fragment {
                 Log.d("quiz number", "is " + quizId);
                 Question nextQuestion = questionDao.getNextQuestion(quizId, question.questionNumber); // Query for the next question
                 Log.d("next number", "is " + nextQuestion);
-                // Check if a next question was found
                 if (nextQuestion != null) {
-                    // Run UI update on the main thread
                     getActivity().runOnUiThread(() -> {
-                        // Create a new fragment with the next question's data
                         QuestionDetailFragment fragment = QuestionDetailFragment.newInstance(quizId, nextQuestion.questionId);
-
-                        // Replace the current fragment with the new one
                         requireActivity().getSupportFragmentManager().beginTransaction()
                                 .replace(R.id.fragment_container, fragment)
                                 .commit();
-
-                        // Optionally, update UI if necessary
                         updateUI();
                     });
                 } else {
-                    // Handle the case where no next question is found, like showing a message or handling the end of quiz
                     getActivity().runOnUiThread(() -> {
-                        // Show a message or handle the scenario
                         Toast.makeText(requireContext(), "No more questions available", Toast.LENGTH_SHORT).show();
                     });
                 }
@@ -137,34 +124,25 @@ public class QuestionDetailFragment extends Fragment {
         });
 
         radioGroupOptions.setOnCheckedChangeListener((group, checkedId) -> {
-            // More explicit logging
-            Log.d("QuestionDetailFragment", "Radio button clicked! ID: " + checkedId);
-
             if (checkedId != -1) {
                 for (int i = 0; i < optionButtons.size(); i++) {
                     if (optionButtons.get(i).getId() == checkedId) {
-                        Log.d("QuestionDetailFragment", "Option " + (i+1) + " selected");
                         updateUserAnswer(currentOptions.get(i).optionId);
                         break;
                     }
                 }
             }
         });
-
-        // Load data after everything is set up
         loadQuestionData();
     }
 
     private void loadQuestionData() {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
-            // Load question and options from database
             AppDatabase db = DatabaseClient.getInstance(requireContext()).getAppDatabase();
             currentQuiz = db.quizDao().getQuizById(quizId);
             currentQuestion = db.questionDao().getQuestionById(questionId);
             currentOptions = db.optionDao().getOptionsByQuestion(questionId);
-
-            // Update UI on main thread
             if (getActivity() != null) {
                 getActivity().runOnUiThread(this::updateUI);
             }
@@ -177,7 +155,7 @@ public class QuestionDetailFragment extends Fragment {
         tvQuestionNumber.setText("Question " + currentQuestion.questionNumber);
         tvQuestionText.setText(currentQuestion.questionText);
 
-        // Set options text
+        //Set options
         for (int i = 0; i < Math.min(optionButtons.size(), currentOptions.size()); i++) {
             optionButtons.get(i).setText(currentOptions.get(i).optionText);
             if(currentQuestion.attempted != 0){     //if user selected option before
@@ -186,7 +164,7 @@ public class QuestionDetailFragment extends Fragment {
                 }
             }
         }
-        // Check the selected option if any
+        //Check the selected option if any
         if (currentQuestion.userAnswer == -1) {
             for (int i = 0; i < currentOptions.size(); i++) {
                 if (currentOptions.get(i).optionId == currentQuestion.userAnswer) {
@@ -201,10 +179,9 @@ public class QuestionDetailFragment extends Fragment {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             AppDatabase db = DatabaseClient.getInstance(requireContext()).getAppDatabase();
-            // Update question in database with user's selected answer
             currentQuestion.userAnswer = optionId;
 
-            // Check if answer is correct
+            //Check if answer is correct
             boolean isCorrect = false;
             for (Option option : currentOptions) {
                 if (option.optionId == optionId && option.isCorrect) {
@@ -214,13 +191,13 @@ public class QuestionDetailFragment extends Fragment {
             }
             if (isCorrect) {
                 requireActivity().runOnUiThread(() -> {
-                    feedback.setText("Correct answer!");  // Update UI element here
-                    feedback.setTextColor(getResources().getColor(android.R.color.holo_green_dark));  // Set text color to green
+                    feedback.setText("Correct answer!");  // feedback
+                    feedback.setTextColor(getResources().getColor(android.R.color.holo_green_dark));  //success message in green
                 });
             }else{
                 requireActivity().runOnUiThread(() -> {
-                    feedback.setText("Wrong answer, please try again!");  // Update UI element here
-                    feedback.setTextColor(getResources().getColor(android.R.color.holo_red_dark));  // Set text color to red
+                    feedback.setText("Wrong answer, please try again!"); // feedback
+                    feedback.setTextColor(getResources().getColor(android.R.color.holo_red_dark)); //failure in red
                 });
             }
 

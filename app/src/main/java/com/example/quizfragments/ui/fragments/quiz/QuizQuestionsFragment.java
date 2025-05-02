@@ -91,22 +91,17 @@ public class QuizQuestionsFragment extends Fragment implements QuestionAdapter.O
         Button btnStartQuiz = view.findViewById(R.id.btnStartQuiz);
         btnBack = view.findViewById(R.id.btnBack);
 
-        // Set quiz title
         tvQuizTitle.setText(quizTitle != null ? quizTitle : "Quiz");
 
-        // Set up RecyclerView
         rvQuestions.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvQuestions.addItemDecoration(new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL));
 
-        // Create adapter
         adapter = new QuestionAdapter(requireContext(), questions, this);
         rvQuestions.setAdapter(adapter);
 
-        // Set up click listeners
         btnBack.setOnClickListener(v -> getParentFragmentManager().popBackStack());
         btnStartQuiz.setOnClickListener(v -> startQuiz());
 
-        // Load questions
         loadQuestions();
     }
 
@@ -120,11 +115,10 @@ public class QuizQuestionsFragment extends Fragment implements QuestionAdapter.O
             OptionDao optionDao = db.optionDao();
             QuizDao quizDao = db.quizDao();
 
-            // Get all questions for the given quiz
             List<Question> rawQuestions = questionDao.getQuestionByQuizId(quizId);
             List<QuestionWithStatus> questionWithStatusList = new ArrayList<>();
             for (Question q : rawQuestions) {
-                // Fetch the correct answer option for this question
+                //Fetch the correct answer option for this question
                 String correctAnswer = optionDao.getCorrectAnswerForQuestion(q.questionId); // You need this method
 
                 //get user answer, if not answered before or reset, answer is -1
@@ -156,7 +150,7 @@ public class QuizQuestionsFragment extends Fragment implements QuestionAdapter.O
                 tvQuestionCount.setText(questionCount + " Questions");
                 tvProgress.setText("Progress: " + numAttempt + "/" + questionCount);
 
-                // Add these lines to update the ProgressBar
+                //update ProgressBar
                 ProgressBar progressBar = getView().findViewById(R.id.progressBar);
                 progressBar.setMax(questionCount);
                 progressBar.setProgress(numAttempt);
@@ -174,7 +168,7 @@ public class QuizQuestionsFragment extends Fragment implements QuestionAdapter.O
                     .addToBackStack(null)
                     .commit();
         } else {
-            Toast.makeText(requireContext(), "No questions available to start the quiz.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "No questions available to start the quiz.", Toast.LENGTH_SHORT).show();   //if no question
         }
     }
 

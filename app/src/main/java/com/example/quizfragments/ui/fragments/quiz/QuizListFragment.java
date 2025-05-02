@@ -59,19 +59,13 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_quiz_list, container, false);
 
-        // Initialize RecyclerView
         recyclerView = view.findViewById(R.id.recycler_quizzes);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         quizAdapter = new QuizAdapter(getContext(), this);
         recyclerView.setAdapter(quizAdapter);
 
-        // Initialize empty state TextView
         tvEmptyQuizzes = view.findViewById(R.id.tv_empty_quizzes);
-
-        // Initialize search and filter views
         searchEditText = view.findViewById(R.id.edit_search);
-
-        // Initialize FAB components
         fabMain = view.findViewById(R.id.fab_main);
         fabCreateQuiz = view.findViewById(R.id.menu_new);
         fabGenerateAI = view.findViewById(R.id.menu_ai);
@@ -79,38 +73,28 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
         tvGenerateAILabel = view.findViewById(R.id.tv_ai_gen_label);
         fabOverlay = view.findViewById(R.id.fab_overlay);
 
-        // Set up swipe to delete
-        setupSwipeToDelete();
+        setupSwipeToDelete();   //to delete quiz
 
-        // Set FAB listeners
         setupFabListeners();
-
         setupListeners();
-
-        // Initialize database
+        //setup db first, with instance and load quiz on setting up db
         db = DatabaseClient.getInstance(requireContext()).getAppDatabase();
-
-        // Load quizzes from database
         loadQuizzes();
 
         return view;
     }
 
-    private void setupSwipeToDelete() {
-        // Create a callback for swipe actions
+    private void setupSwipeToDelete() { //deletion of quiz
         ItemTouchHelper.SimpleCallback swipeCallback = new ItemTouchHelper.SimpleCallback(
                 0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
-
             private final ColorDrawable background = new ColorDrawable(Color.parseColor("#FF5252"));
             private final Drawable deleteIcon = ContextCompat.getDrawable(requireContext(), android.R.drawable.ic_menu_delete);
-
             @Override
             public boolean onMove(@NonNull RecyclerView recyclerView,
                                   @NonNull RecyclerView.ViewHolder viewHolder,
                                   @NonNull RecyclerView.ViewHolder target) {
                 return false; // We don't want drag & drop
             }
-
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
                 int position = viewHolder.getAdapterPosition();
@@ -126,44 +110,34 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
                                     int actionState, boolean isCurrentlyActive) {
 
                 View itemView = viewHolder.itemView;
-
-                // Don't draw when item is swiped out of the screen
                 if (Math.abs(dX) < 0.1) {
                     super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
                     return;
                 }
 
-                // Draw red background
                 background.setBounds(
                         itemView.getLeft(),
                         itemView.getTop(),
                         itemView.getRight(),
                         itemView.getBottom());
                 background.draw(c);
-
-                // Calculate position of delete icon
                 int iconMargin = (itemView.getHeight() - deleteIcon.getIntrinsicHeight()) / 2;
                 int iconTop = itemView.getTop() + iconMargin;
                 int iconBottom = iconTop + deleteIcon.getIntrinsicHeight();
 
-                // Draw delete icon based on swipe direction
-                if (dX > 0) { // Swiping to the right
+                if (dX > 0) { // swipe to right
                     int iconLeft = itemView.getLeft() + iconMargin;
                     int iconRight = itemView.getLeft() + iconMargin + deleteIcon.getIntrinsicWidth();
                     deleteIcon.setBounds(iconLeft, iconTop, iconRight, iconBottom);
-                } else { // Swiping to the left
+                } else { // left
                     int iconRight = itemView.getRight() - iconMargin;
                     int iconLeft = itemView.getRight() - iconMargin - deleteIcon.getIntrinsicWidth();
                     deleteIcon.setBounds(iconLeft, iconTop, iconRight, iconBottom);
                 }
-
                 deleteIcon.draw(c);
-
                 super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
             }
         };
-
-        // Attach the ItemTouchHelper to the RecyclerView
         new ItemTouchHelper(swipeCallback).attachToRecyclerView(recyclerView);
     }
 
@@ -172,41 +146,34 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
         builder.setTitle("Delete Quiz");
         builder.setMessage("Are you sure you want to delete \"" + quiz.title + "\"?");
 
-        // Add the buttons
-        builder.setPositiveButton("Delete", (dialog, id) -> {
-            // User confirmed deletion
+        builder.setPositiveButton("Delete", (dialog, id) -> {   //user deletes
             deleteQuiz(position, quiz);
         });
 
-        builder.setNegativeButton("Cancel", (dialog, id) -> {
-            // User cancelled the dialog
-            // Reset the item in the RecyclerView
+        builder.setNegativeButton("Cancel", (dialog, id) -> {   //user cancel to delete
             quizAdapter.notifyItemChanged(position);
         });
 
-        // Create and show the AlertDialog
         AlertDialog dialog = builder.create();
         dialog.show();
     }
 
     private void deleteQuiz(int position, Quiz deletedQuiz) {
-        // Remove from adapter
+        //clear from adapter
         quizAdapter.removeQuiz(position);
-
-        // Check if the list is now empty
+        //check if quiz list is empty
         updateEmptyState();
-
-        // Show a snackbar with undo option
+        //show snackbar to undo
         Snackbar.make(recyclerView, "Quiz deleted", Snackbar.LENGTH_LONG)
                 .setAction("UNDO", v -> {
-                    // Add quiz back to adapter
+                    //add back the quiz if undo-ed
                     quizAdapter.addQuiz(position, deletedQuiz);
                     updateEmptyState();
                 })
                 .addCallback(new Snackbar.Callback() {
                     @Override
                     public void onDismissed(Snackbar snackbar, int event) {
-                        // If snackbar is dismissed without clicking UNDO, delete from database
+                        //If snackbar is closed without undo, delete from database
                         if (event != Snackbar.Callback.DISMISS_EVENT_ACTION) {
                             deleteQuizFromDatabase(deletedQuiz);
                         }
@@ -218,11 +185,8 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
     private void deleteQuizFromDatabase(Quiz quiz) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
-            // Delete from database
             db.quizDao().delete(quiz);
-
-            // Update allQuizzes list
-            allQuizzes.remove(quiz);
+            allQuizzes.remove(quiz); //update list to dynamically update UI
         });
         executor.shutdown();
     }
@@ -302,7 +266,6 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
 
     @Override
     public void onQuizClick(Quiz quiz) {
-        // Navigate to QuizQuestionsFragment
         QuizQuestionsFragment questionsFragment = QuizQuestionsFragment.newInstance(quiz.quizId, quiz.title);
 
         requireActivity().getSupportFragmentManager()
@@ -343,21 +306,17 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
     private void loadQuizzes() {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
-            // Get quizzes from database
             List<Quiz> quizzes = db.quizDao().getAllQuizzes();
 
-            // If database is empty, add some sample quizzes
             if (quizzes.isEmpty()) {
                 Log.d("empty", "no quiz found");
                 for (Quiz quiz : quizzes) {
                     db.quizDao().insert(quiz);
                 }
-                quizzes = db.quizDao().getAllQuizzes(); // Reload to get IDs
+                quizzes = db.quizDao().getAllQuizzes();
             }
 
             allQuizzes = quizzes;
-
-            // Update UI on main thread
             if (getActivity() != null) {
                 List<Quiz> finalQuizzes = quizzes;
                 getActivity().runOnUiThread(() -> {
@@ -372,7 +331,6 @@ public class QuizListFragment extends Fragment implements QuizAdapter.OnQuizClic
     @Override
     public void onResume() {
         super.onResume();
-        // Make sure the FAB menu is closed when returning to this fragment
         if (isFabMenuOpen) {
             closeFabMenu();
         }
