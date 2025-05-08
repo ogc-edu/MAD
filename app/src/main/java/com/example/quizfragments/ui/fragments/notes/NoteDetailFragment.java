@@ -455,7 +455,7 @@ public class NoteDetailFragment extends Fragment {
                 "  ]\n" +
                 "}\n\n" +
                 "Rules:\n" +
-                "1. Create 3-5 multiple-choice questions based on the content\n" +
+                "1. Create 10 multiple-choice questions based on the content\n" +
                 "2. Each question must have exactly 4 options with only one correct answer\n" +
                 "3. Make sure the questions test understanding, not just memorization\n" +
                 "4. The response must be ONLY the JSON object - no explanations, no markdown formatting\n" +
