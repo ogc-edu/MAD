@@ -7,4 +7,16 @@
         android:title="@string/menu_ask_ai"
         android:icon="@drawable/ic_ai"
         app:showAsAction="ifRoom|withText" />
+
+    <item
+        android:id="@+id/menu_create_quiz"
+        android:title="@string/menu_create_quiz"
+        android:icon="@android:drawable/ic_menu_manage"
+        app:showAsAction="ifRoom|withText" />
+
+    <item
+        android:id="@+id/menu_create_flashcard"
+        android:title="@string/menu_create_flashcard"
+        android:icon="@android:drawable/ic_menu_info_details"
+        app:showAsAction="ifRoom|withText" />
 </menu>

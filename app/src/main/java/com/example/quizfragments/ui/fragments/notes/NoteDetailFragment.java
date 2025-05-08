@@ -1,6 +1,7 @@
 package com.example.quizfragments.ui.fragments.notes;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -362,12 +363,22 @@ public class NoteDetailFragment extends Fragment {
         contentEditText.setCustomSelectionActionModeCallback(new ActionMode.Callback() {
             @Override
             public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+                // Add our custom options to the context menu
 
-
-                // Add our custom "Ask AI" option
-                MenuItem askAiItem = menu.add(Menu.NONE, R.id.menu_ask_ai, 5, "Ask AI");
-                askAiItem.setIcon(android.R.drawable.ic_menu_help); // Use a default icon or your custom one
+                // Add "Ask AI" option
+                MenuItem askAiItem = menu.add(Menu.NONE, R.id.menu_ask_ai, 1, getString(R.string.menu_ask_ai));
+                askAiItem.setIcon(R.drawable.ic_ai);
                 askAiItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS | MenuItem.SHOW_AS_ACTION_WITH_TEXT);
+
+                // Add "Create Quiz" option
+                MenuItem createQuizItem = menu.add(Menu.NONE, R.id.menu_create_quiz, 2, getString(R.string.menu_create_quiz));
+                createQuizItem.setIcon(android.R.drawable.ic_menu_manage);
+                createQuizItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS | MenuItem.SHOW_AS_ACTION_WITH_TEXT);
+
+                // Add "Create Flashcard" option
+                MenuItem createFlashcardItem = menu.add(Menu.NONE, R.id.menu_create_flashcard, 3, getString(R.string.menu_create_flashcard));
+                createFlashcardItem.setIcon(android.R.drawable.ic_menu_info_details);
+                createFlashcardItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS | MenuItem.SHOW_AS_ACTION_WITH_TEXT);
 
                 return true;
             }
@@ -379,14 +390,24 @@ public class NoteDetailFragment extends Fragment {
 
             @Override
             public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-                // Check if the "Ask AI" option was selected
-                if (item.getItemId() == R.id.menu_ask_ai) {
-                    int start = contentEditText.getSelectionStart();
-                    int end = contentEditText.getSelectionEnd();
+                int start = contentEditText.getSelectionStart();
+                int end = contentEditText.getSelectionEnd();
 
-                    if (start != end) {
-                        String selectedText = contentEditText.getText().toString().substring(start, end);
+                if (start != end) {
+                    String selectedText = contentEditText.getText().toString().substring(start, end);
+
+                    // Check which option was selected
+                    int itemId = item.getItemId();
+                    if (itemId == R.id.menu_ask_ai) {
                         askAI(selectedText);
+                        mode.finish(); // Close the action mode
+                        return true;
+                    } else if (itemId == R.id.menu_create_quiz) {
+                        createQuizFromSelectedText(selectedText);
+                        mode.finish(); // Close the action mode
+                        return true;
+                    } else if (itemId == R.id.menu_create_flashcard) {
+                        createFlashcardFromSelectedText(selectedText);
                         mode.finish(); // Close the action mode
                         return true;
                     }
@@ -399,6 +420,323 @@ public class NoteDetailFragment extends Fragment {
                 // Not needed
             }
         });
+    }
+
+    /**
+     * Creates a quiz from the selected text in the note
+     * @param selectedText The text selected by the user
+     */
+    private void createQuizFromSelectedText(String selectedText) {
+        // Show loading dialog
+        AlertDialog loadingDialog = new AlertDialog.Builder(requireContext())
+                .setTitle("Creating Quiz")
+                .setMessage("Generating quiz questions from your selection...")
+                .setCancelable(false)
+                .create();
+        loadingDialog.show();
+
+        // Create a prompt for the AI to generate quiz questions
+        String prompt = "Create a quiz based on this text: \"" + selectedText + "\"\n\n" +
+                "IMPORTANT: Your response must be ONLY a valid JSON object with no additional text, explanations, or markdown formatting.\n\n" +
+                "Format the response as a JSON object with the following structure:\n" +
+                "{\n" +
+                "  \"title\": \"Quiz title based on the content\",\n" +
+                "  \"description\": \"Brief description of what this quiz covers\",\n" +
+                "  \"questions\": [\n" +
+                "    {\n" +
+                "      \"question\": \"Question text\",\n" +
+                "      \"options\": [\n" +
+                "        {\"text\": \"Option 1\", \"isCorrect\": false},\n" +
+                "        {\"text\": \"Option 2\", \"isCorrect\": true},\n" +
+                "        {\"text\": \"Option 3\", \"isCorrect\": false},\n" +
+                "        {\"text\": \"Option 4\", \"isCorrect\": false}\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}\n\n" +
+                "Rules:\n" +
+                "1. Create 3-5 multiple-choice questions based on the content\n" +
+                "2. Each question must have exactly 4 options with only one correct answer\n" +
+                "3. Make sure the questions test understanding, not just memorization\n" +
+                "4. The response must be ONLY the JSON object - no explanations, no markdown formatting\n" +
+                "5. Do not include any text before or after the JSON structure\n" +
+                "6. Make sure all JSON keys and values are properly quoted with double quotes\n" +
+                "7. Ensure the JSON is properly formatted and can be parsed by a standard JSON parser";
+
+        // Call the AI API
+        AI.modelCall(prompt, new AI.ResponseCallback() {
+            @Override
+            public void onResponse(String result) {
+                loadingDialog.dismiss();
+
+                try {
+                    // Clean the result string to ensure it's valid JSON
+                    String cleanedResult = cleanJsonString(result);
+
+                    // Try to parse the JSON response
+                    org.json.JSONObject jsonResponse = new org.json.JSONObject(cleanedResult);
+                    String quizTitle = jsonResponse.getString("title");
+                    String quizDescription = jsonResponse.getString("description");
+                    org.json.JSONArray questionsArray = jsonResponse.getJSONArray("questions");
+
+                    // Create a new quiz in the database
+                    createQuizInDatabase(quizTitle, quizDescription, questionsArray);
+
+                } catch (org.json.JSONException e) {
+                    // Show error if JSON parsing fails
+                    new AlertDialog.Builder(requireContext())
+                            .setTitle("Error")
+                            .setMessage("Failed to parse quiz data. Please try again with a different selection.\n\nError details: " + e.getMessage())
+                            .setPositiveButton("OK", null)
+                            .show();
+                    e.printStackTrace();
+
+                    // Log the response for debugging
+                    Log.e("NoteDetailFragment", "Failed to parse JSON: " + result);
+
+                    // Try to create a simple quiz as fallback
+                    tryCreateSimpleQuiz(selectedText);
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingDialog.dismiss();
+
+                // Show error message
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("Error")
+                        .setMessage("Failed to generate quiz: " + error)
+                        .setPositiveButton("OK", null)
+                        .show();
+            }
+        });
+    }
+
+    /**
+     * Creates a quiz in the database from the AI-generated data
+     */
+    private void createQuizInDatabase(String title, String description, org.json.JSONArray questionsArray) {
+        new Thread(() -> {
+            try {
+                // Create a new Quiz entity
+                com.example.quizfragments.data.db.entities.Quiz newQuiz = new com.example.quizfragments.data.db.entities.Quiz();
+                newQuiz.title = title;
+                newQuiz.description = description;
+                newQuiz.questionCount = questionsArray.length();
+
+                // Insert the quiz and get its ID
+                long quizId = db.quizDao().insert(newQuiz);
+
+                // Add questions and options
+                for (int i = 0; i < questionsArray.length(); i++) {
+                    org.json.JSONObject questionObj = questionsArray.getJSONObject(i);
+                    String questionText = questionObj.getString("question");
+
+                    // Create a Question entity
+                    com.example.quizfragments.data.db.entities.Question question = new com.example.quizfragments.data.db.entities.Question();
+                    question.quizId = (int) quizId;
+                    question.questionText = questionText;
+                    question.questionNumber = i + 1;
+                    question.attempted = 0; // Not attempted yet
+
+                    // Insert the question and get its ID
+                    long questionId = db.questionDao().insert(question);
+
+                    // Add options for this question
+                    org.json.JSONArray optionsArray = questionObj.getJSONArray("options");
+                    for (int j = 0; j < optionsArray.length(); j++) {
+                        org.json.JSONObject optionObj = optionsArray.getJSONObject(j);
+                        String optionText = optionObj.getString("text");
+                        boolean isCorrect = optionObj.getBoolean("isCorrect");
+
+                        // Create an Option entity
+                        com.example.quizfragments.data.db.entities.Option option = new com.example.quizfragments.data.db.entities.Option();
+                        option.questionId = (int) questionId;
+                        option.optionText = optionText;
+                        option.isCorrect = isCorrect;
+
+                        // Insert the option
+                        db.optionDao().insert(option);
+                    }
+                }
+
+                // Show success message and navigate to the quiz
+                if (isAdded() && getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), "Quiz created successfully!", Toast.LENGTH_SHORT).show();
+
+                        // Navigate to the quiz questions fragment
+                        com.example.quizfragments.ui.fragments.quiz.QuizQuestionsFragment questionsFragment =
+                                com.example.quizfragments.ui.fragments.quiz.QuizQuestionsFragment.newInstance((int) quizId, title);
+
+                        requireActivity().getSupportFragmentManager()
+                                .beginTransaction()
+                                .replace(R.id.fragment_container, questionsFragment)
+                                .addToBackStack(null)
+                                .commit();
+                    });
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                if (isAdded() && getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), "Error creating quiz: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    });
+                }
+            }
+        }).start();
+    }
+
+    /**
+     * Creates flashcards from the selected text in the note
+     * @param selectedText The text selected by the user
+     */
+    private void createFlashcardFromSelectedText(String selectedText) {
+        // Show loading dialog
+        AlertDialog loadingDialog = new AlertDialog.Builder(requireContext())
+                .setTitle("Creating Flashcards")
+                .setMessage("Generating flashcards from your selection...")
+                .setCancelable(false)
+                .create();
+        loadingDialog.show();
+
+        // Create a prompt for the AI to generate flashcards
+        String prompt = "Create a set of flashcards based on this text: \"" + selectedText + "\"\n\n" +
+                "IMPORTANT: Your response must be ONLY a valid JSON array with no additional text, explanations, or markdown formatting.\n\n" +
+                "Format the response as a JSON array with the following structure:\n" +
+                "[\n" +
+                "  {\n" +
+                "    \"title\": \"Flashcard deck title based on the content\",\n" +
+                "    \"description\": \"Brief description of what these flashcards cover\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"question\": \"Front side of flashcard 1\",\n" +
+                "    \"answer\": \"Back side of flashcard 1\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"question\": \"Front side of flashcard 2\",\n" +
+                "    \"answer\": \"Back side of flashcard 2\"\n" +
+                "  }\n" +
+                "]\n\n" +
+                "Rules:\n" +
+                "1. Create 5-10 flashcards based on the content\n" +
+                "2. The first object in the array must contain the title and description\n" +
+                "3. Each subsequent object represents one flashcard with question and answer\n" +
+                "4. Questions should be concise and focused on key concepts\n" +
+                "5. Answers should be clear and informative but not too long\n" +
+                "6. The response must be ONLY the JSON array - no explanations, no markdown formatting\n" +
+                "7. Do not include any text before or after the JSON structure\n" +
+                "8. Make sure all JSON keys and values are properly quoted with double quotes\n" +
+                "9. Ensure the JSON is properly formatted and can be parsed by a standard JSON parser";
+
+        // Call the AI API
+        AI.modelCall(prompt, new AI.ResponseCallback() {
+            @Override
+            public void onResponse(String result) {
+                loadingDialog.dismiss();
+
+                try {
+                    // Clean the result string to ensure it's valid JSON
+                    String cleanedResult = cleanJsonString(result);
+
+                    // Try to parse the JSON response
+                    org.json.JSONArray jsonArray = new org.json.JSONArray(cleanedResult);
+
+                    // The first object contains the deck info
+                    org.json.JSONObject deckInfo = jsonArray.getJSONObject(0);
+                    String deckTitle = deckInfo.getString("title");
+                    String deckDescription = deckInfo.getString("description");
+
+                    // Create a new flashcard deck in the database
+                    createFlashcardDeckInDatabase(deckTitle, deckDescription, jsonArray);
+
+                } catch (org.json.JSONException e) {
+                    // Show error if JSON parsing fails
+                    new AlertDialog.Builder(requireContext())
+                            .setTitle("Error")
+                            .setMessage("Failed to parse flashcard data. Please try again with a different selection.\n\nError details: " + e.getMessage())
+                            .setPositiveButton("OK", null)
+                            .show();
+                    e.printStackTrace();
+
+                    // Log the response for debugging
+                    Log.e("NoteDetailFragment", "Failed to parse JSON: " + result);
+
+                    // Try to create simple flashcards as fallback
+                    tryCreateSimpleFlashcards(selectedText);
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingDialog.dismiss();
+
+                // Show error message
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("Error")
+                        .setMessage("Failed to generate flashcards: " + error)
+                        .setPositiveButton("OK", null)
+                        .show();
+            }
+        });
+    }
+
+    /**
+     * Creates a flashcard deck in the database from the AI-generated data
+     */
+    private void createFlashcardDeckInDatabase(String title, String description, org.json.JSONArray jsonArray) {
+        new Thread(() -> {
+            try {
+                // Create a new FlashcardDeck entity
+                com.example.quizfragments.data.db.entities.FlashcardDeck deck =
+                        new com.example.quizfragments.data.db.entities.FlashcardDeck(title, description);
+
+                // Insert the deck and get its ID
+                long deckId = db.flashcardDeckDao().insert(deck);
+
+                // Add flashcards (starting from index 1, as index 0 contains the deck info)
+                for (int i = 1; i < jsonArray.length(); i++) {
+                    org.json.JSONObject cardObj = jsonArray.getJSONObject(i);
+                    String question = cardObj.getString("question");
+                    String answer = cardObj.getString("answer");
+
+                    // Create a Flashcard entity
+                    com.example.quizfragments.data.db.entities.Flashcard flashcard =
+                            new com.example.quizfragments.data.db.entities.Flashcard(question, answer, (int) deckId);
+                    flashcard.setPosition(i - 1);
+
+                    // Insert the flashcard
+                    db.flashcardDao().insert(flashcard);
+                }
+
+                // Show success message and navigate to the flashcard study fragment
+                if (isAdded() && getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), "Flashcards created successfully!", Toast.LENGTH_SHORT).show();
+
+                        // Navigate to the flashcard study fragment
+                        com.example.quizfragments.ui.fragments.flashcard.FlashcardStudyFragment studyFragment =
+                                com.example.quizfragments.ui.fragments.flashcard.FlashcardStudyFragment.newInstance((int) deckId);
+
+                        requireActivity().getSupportFragmentManager()
+                                .beginTransaction()
+                                .replace(R.id.fragment_container, studyFragment)
+                                .addToBackStack(null)
+                                .commit();
+                    });
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                if (isAdded() && getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), "Error creating flashcards: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    });
+                }
+            }
+        }).start();
     }
 
     private void askAI(String selectedText) {
@@ -1011,6 +1349,241 @@ public class NoteDetailFragment extends Fragment {
             e.printStackTrace();
             Toast.makeText(requireContext(), "Error adding checkbox", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    /**
+     * Creates a simple quiz as a fallback when AI JSON parsing fails
+     * @param selectedText The text selected by the user
+     */
+    private void tryCreateSimpleQuiz(String selectedText) {
+        // Show a dialog to confirm creating a simple quiz
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Create Simple Quiz")
+                .setMessage("Would you like to create a simple quiz based on your selection? " +
+                        "This will create a basic quiz with true/false questions.")
+                .setPositiveButton("Create", (dialog, which) -> {
+                    // Create a simple quiz with the selected text
+                    createSimpleQuiz(selectedText);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /**
+     * Creates a simple quiz with true/false questions
+     * @param selectedText The text selected by the user
+     */
+    private void createSimpleQuiz(String selectedText) {
+        new Thread(() -> {
+            try {
+                // Create a title from the first few words of the selected text
+                String title = "Quiz on " + (selectedText.length() > 30 ?
+                        selectedText.substring(0, 30) + "..." : selectedText);
+
+                // Create a new Quiz entity
+                com.example.quizfragments.data.db.entities.Quiz newQuiz = new com.example.quizfragments.data.db.entities.Quiz();
+                newQuiz.title = title;
+                newQuiz.description = "Quiz generated from selected text";
+                newQuiz.questionCount = 3; // Create 3 simple questions
+
+                // Insert the quiz and get its ID
+                long quizId = db.quizDao().insert(newQuiz);
+
+                // Create 3 simple true/false questions
+                String[] sentences = selectedText.split("\\. ");
+                int numQuestions = Math.min(3, sentences.length);
+
+                for (int i = 0; i < numQuestions; i++) {
+                    // Create a Question entity
+                    com.example.quizfragments.data.db.entities.Question question = new com.example.quizfragments.data.db.entities.Question();
+                    question.quizId = (int) quizId;
+                    question.questionText = "Is this statement true? \"" + sentences[i] + "\"";
+                    question.questionNumber = i + 1;
+                    question.attempted = 0; // Not attempted yet
+
+                    // Insert the question and get its ID
+                    long questionId = db.questionDao().insert(question);
+
+                    // Create true and false options
+                    com.example.quizfragments.data.db.entities.Option trueOption = new com.example.quizfragments.data.db.entities.Option();
+                    trueOption.questionId = (int) questionId;
+                    trueOption.optionText = "True";
+                    trueOption.isCorrect = true; // Assume true for simplicity
+
+                    com.example.quizfragments.data.db.entities.Option falseOption = new com.example.quizfragments.data.db.entities.Option();
+                    falseOption.questionId = (int) questionId;
+                    falseOption.optionText = "False";
+                    falseOption.isCorrect = false;
+
+                    // Insert the options
+                    db.optionDao().insert(trueOption);
+                    db.optionDao().insert(falseOption);
+                }
+
+                // Show success message and navigate to the quiz
+                if (isAdded() && getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), "Simple quiz created successfully!", Toast.LENGTH_SHORT).show();
+
+                        // Navigate to the quiz questions fragment
+                        com.example.quizfragments.ui.fragments.quiz.QuizQuestionsFragment questionsFragment =
+                                com.example.quizfragments.ui.fragments.quiz.QuizQuestionsFragment.newInstance((int) quizId, title);
+
+                        requireActivity().getSupportFragmentManager()
+                                .beginTransaction()
+                                .replace(R.id.fragment_container, questionsFragment)
+                                .addToBackStack(null)
+                                .commit();
+                    });
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                if (isAdded() && getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), "Error creating simple quiz: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    });
+                }
+            }
+        }).start();
+    }
+
+    /**
+     * Creates simple flashcards as a fallback when AI JSON parsing fails
+     * @param selectedText The text selected by the user
+     */
+    private void tryCreateSimpleFlashcards(String selectedText) {
+        // Show a dialog to confirm creating simple flashcards
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Create Simple Flashcards")
+                .setMessage("Would you like to create simple flashcards based on your selection? " +
+                        "This will create basic flashcards from sentences in your text.")
+                .setPositiveButton("Create", (dialog, which) -> {
+                    // Create simple flashcards with the selected text
+                    createSimpleFlashcards(selectedText);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /**
+     * Creates simple flashcards from sentences in the selected text
+     * @param selectedText The text selected by the user
+     */
+    private void createSimpleFlashcards(String selectedText) {
+        new Thread(() -> {
+            try {
+                // Create a title from the first few words of the selected text
+                String title = "Flashcards on " + (selectedText.length() > 30 ?
+                        selectedText.substring(0, 30) + "..." : selectedText);
+
+                // Create a new FlashcardDeck entity
+                com.example.quizfragments.data.db.entities.FlashcardDeck deck =
+                        new com.example.quizfragments.data.db.entities.FlashcardDeck(title, "Flashcards generated from selected text");
+
+                // Insert the deck and get its ID
+                long deckId = db.flashcardDeckDao().insert(deck);
+
+                // Split the text into sentences
+                String[] sentences = selectedText.split("\\. ");
+                int numFlashcards = Math.min(5, sentences.length);
+
+                // Create flashcards from sentences
+                for (int i = 0; i < numFlashcards; i++) {
+                    String sentence = sentences[i].trim();
+                    if (sentence.isEmpty()) continue;
+
+                    // Create a question by removing a key word
+                    String[] words = sentence.split("\\s+");
+                    if (words.length < 3) continue;
+
+                    // Find a word to remove (not the first or last, preferably a noun or verb)
+                    int wordToRemove = words.length / 2;
+                    String removedWord = words[wordToRemove];
+                    words[wordToRemove] = "________";
+
+                    // Create the question with the blank
+                    StringBuilder questionBuilder = new StringBuilder();
+                    for (String word : words) {
+                        questionBuilder.append(word).append(" ");
+                    }
+                    String question = questionBuilder.toString().trim();
+
+                    // Create a Flashcard entity
+                    com.example.quizfragments.data.db.entities.Flashcard flashcard =
+                            new com.example.quizfragments.data.db.entities.Flashcard(question, removedWord, (int) deckId);
+                    flashcard.setPosition(i);
+
+                    // Insert the flashcard
+                    db.flashcardDao().insert(flashcard);
+                }
+
+                // Show success message and navigate to the flashcard study fragment
+                if (isAdded() && getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), "Simple flashcards created successfully!", Toast.LENGTH_SHORT).show();
+
+                        // Navigate to the flashcard study fragment
+                        com.example.quizfragments.ui.fragments.flashcard.FlashcardStudyFragment studyFragment =
+                                com.example.quizfragments.ui.fragments.flashcard.FlashcardStudyFragment.newInstance((int) deckId);
+
+                        requireActivity().getSupportFragmentManager()
+                                .beginTransaction()
+                                .replace(R.id.fragment_container, studyFragment)
+                                .addToBackStack(null)
+                                .commit();
+                    });
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                if (isAdded() && getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), "Error creating simple flashcards: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    });
+                }
+            }
+        }).start();
+    }
+
+    /**
+     * Cleans a string to ensure it's valid JSON
+     * This method helps handle common issues with AI-generated JSON
+     * @param jsonString The raw JSON string from the AI
+     * @return A cleaned JSON string
+     */
+    private String cleanJsonString(String jsonString) {
+        if (jsonString == null || jsonString.isEmpty()) {
+            return "{}"; // Return empty JSON object if input is null or empty
+        }
+
+        // Find the first occurrence of '{' or '[' (start of JSON)
+        int jsonStart = -1;
+        for (int i = 0; i < jsonString.length(); i++) {
+            char c = jsonString.charAt(i);
+            if (c == '{' || c == '[') {
+                jsonStart = i;
+                break;
+            }
+        }
+
+        // Find the last occurrence of '}' or ']' (end of JSON)
+        int jsonEnd = -1;
+        for (int i = jsonString.length() - 1; i >= 0; i--) {
+            char c = jsonString.charAt(i);
+            if (c == '}' || c == ']') {
+                jsonEnd = i + 1; // +1 to include the closing bracket
+                break;
+            }
+        }
+
+        // If we found valid JSON start and end markers, extract the JSON part
+        if (jsonStart != -1 && jsonEnd != -1 && jsonStart < jsonEnd) {
+            return jsonString.substring(jsonStart, jsonEnd);
+        }
+
+        // If we couldn't find valid JSON markers, return the original string
+        return jsonString;
     }
 
     private void saveNote() {
